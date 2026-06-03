@@ -32,6 +32,12 @@
               <span>Customers</span>
             </NuxtLink>
           </li>
+          <li>
+            <NuxtLink to="/reports" class="nav-link">
+              <i class="ti ti-chart-bar nav-icon"></i>
+              <span>Reports & Collections</span>
+            </NuxtLink>
+          </li>
         </ul>
       </nav>
     </aside>
