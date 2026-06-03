@@ -97,7 +97,8 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-left: 1rem;
   margin-bottom: 3rem;
   width: 100%;
 }
@@ -540,7 +541,12 @@ input:focus, select:focus, textarea:focus {
   }
   .brand {
     justify-content: center;
+    padding-left: 0;
     margin-bottom: 2rem;
+  }
+  .brand-logo-img {
+    width: 48px;
+    max-height: 48px;
   }
   .nav-link span {
     display: none;
