@@ -114,7 +114,7 @@
               </div>
               <div class="flex justify-between items-center mt-2" style="font-size: 0.85rem;">
                 <span class="text-secondary">{{ order.serviceName }}</span>
-                <strong>${{ order.totalPrice.toFixed(2) }}</strong>
+                <strong>₹{{ order.totalPrice.toFixed(2) }}</strong>
               </div>
               <div v-if="order.notes" style="font-size: 0.8rem; font-style: italic; margin-top: 0.5rem;" class="text-secondary">
                 "{{ order.notes }}"

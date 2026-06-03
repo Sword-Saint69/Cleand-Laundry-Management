@@ -89,7 +89,7 @@
                 <span v-else>{{ order.qty }} pcs</span>
               </td>
               <td>
-                <strong style="color: var(--color-success)">${{ order.totalPrice.toFixed(2) }}</strong>
+                <strong style="color: var(--color-success)">₹{{ order.totalPrice.toFixed(2) }}</strong>
               </td>
               <td>{{ formatDate(order.orderDate) }}</td>
               <td>
@@ -159,7 +159,7 @@
             <select id="order-service" v-model="newOrder.serviceId">
               <option value="" disabled>Choose a service...</option>
               <option v-for="srv in services" :key="srv.id" :value="srv.id">
-                {{ srv.name }} (${{ srv.price.toFixed(2) }} per {{ srv.unit }})
+                {{ srv.name }} (₹{{ srv.price.toFixed(2) }} per {{ srv.unit }})
               </option>
             </select>
           </div>
@@ -224,17 +224,17 @@
               <span>Subtotal Calculation:</span>
               <span>
                 {{ selectedService.unit === 'kg' ? `${newOrder.weight || 0} kg` : `${newOrder.qty || 0} pcs` }}
-                &times; ${{ selectedService.price.toFixed(2) }}
+                &times; ₹{{ selectedService.price.toFixed(2) }}
               </span>
             </div>
             <div class="flex justify-between items-center" v-if="newOrder.priority === 'express'">
               <span class="text-primary">Express Surcharge (20%):</span>
-              <span class="text-primary">+${{ (subtotalPrice * 0.2).toFixed(2) }}</span>
+              <span class="text-primary">+₹{{ (subtotalPrice * 0.2).toFixed(2) }}</span>
             </div>
             <div class="flex justify-between items-center mt-2" style="border-top: 1px solid var(--border-color); padding-top: 0.5rem;">
               <strong>Total Order Price:</strong>
               <strong style="font-size: 1.25rem; color: var(--color-success)">
-                ${{ computedTotalPrice.toFixed(2) }}
+                ₹{{ computedTotalPrice.toFixed(2) }}
               </strong>
             </div>
           </div>

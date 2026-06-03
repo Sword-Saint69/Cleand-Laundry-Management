@@ -62,7 +62,7 @@
         </div>
         <div class="metric-info">
           <span class="metric-label">Total Revenue</span>
-          <span class="metric-value">${{ totalRevenue.toFixed(2) }}</span>
+          <span class="metric-value">₹{{ totalRevenue.toFixed(2) }}</span>
         </div>
       </div>
     </div>

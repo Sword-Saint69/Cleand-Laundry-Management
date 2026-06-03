@@ -42,7 +42,7 @@
               </td>
               <td>
                 <strong style="color: var(--color-success); font-size: 1.05rem;">
-                  ${{ srv.price.toFixed(2) }}
+                  ₹{{ srv.price.toFixed(2) }}
                 </strong>
               </td>
               <td>
@@ -94,7 +94,7 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="srv-price">Rate / Base Price ($)</label>
+              <label for="srv-price">Rate / Base Price (₹)</label>
               <input 
                 id="srv-price" 
                 type="number" 
