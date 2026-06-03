@@ -204,11 +204,9 @@
 
         <div class="modal-footer no-print">
           <button class="btn btn-secondary" @click="selectedReceiptOrder = null">Close</button>
-          <button class="btn btn-primary" @click="printReceipt">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.82l-.024-.03H5.385a2.25 2.25 0 00-2.25 2.25v3.75a2.25 2.25 0 002.25 2.25h13.23a2.25 2.25 0 002.25-2.25v-3.75a2.25 2.25 0 00-2.25-2.25h-1.312l-.024.03m-12.825-4.526A2.25 2.25 0 017.5 12h9a2.25 2.25 0 012.235 2.046M12 16.5v-6M12 7.5h.008v.008H12V7.5z" />
-            </svg>
-            Print Receipt
+          <button class="btn btn-primary" @click="printReceipt" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <i class="ti ti-printer" style="font-size: 1.25rem;"></i>
+            <span>Print Receipt</span>
           </button>
         </div>
       </div>

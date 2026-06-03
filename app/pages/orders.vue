@@ -7,11 +7,9 @@
         <p class="subtitle">Create and oversee customer laundry batches</p>
       </div>
       <div>
-        <button class="btn btn-primary" @click="openCreateModal">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Create New Order
+        <button class="btn btn-primary" @click="openCreateModal" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+          <i class="ti ti-plus" style="font-size: 1.25rem;"></i>
+          <span>Create New Order</span>
         </button>
       </div>
     </div>
@@ -90,7 +88,7 @@
               </td>
               <td>
                 <div v-for="item in order.items" :key="item.slNo" style="font-size: 0.85rem; line-height: 1.35; margin-bottom: 2px;">
-                  • {{ item.material }} <span v-if="order.orderType === 'washing' && item.stains && item.stains !== 'None'" style="font-size: 0.75rem; color: var(--color-danger); font-weight: 600;">[{{ item.stains }} Stains]</span> (x{{ item.qty }} &times; ₹{{ item.price }})
+                  {{ item.material }} <span v-if="order.orderType === 'washing' && item.stains && item.stains !== 'None'" style="font-size: 0.75rem; color: var(--color-danger); font-weight: 600;">[{{ item.stains }} Stains]</span> (x{{ item.qty }} &times; ₹{{ item.price }})
                 </div>
               </td>
               <td>
@@ -199,9 +197,33 @@
                 <label for="order-cust-name">Customer Name</label>
                 <input id="order-cust-name" type="text" v-model="newOrder.customerName" placeholder="e.g. Sarah Connor" />
               </div>
-              <div class="form-group">
+              <div class="form-group" style="position: relative;">
                 <label for="order-cust-phone">Customer Phone</label>
-                <input id="order-cust-phone" type="text" v-model="newOrder.customerPhone" placeholder="e.g. +91 9988776655" />
+                <input 
+                  id="order-cust-phone" 
+                  type="text" 
+                  v-model="newOrder.customerPhone" 
+                  placeholder="e.g. +91 9988776655" 
+                  autocomplete="off"
+                  @focus="showCustomerDropdown = true"
+                  @blur="hideCustomerDropdownWithDelay"
+                />
+                <div 
+                  v-if="showCustomerDropdown && matchingCustomers.length > 0"
+                  style="position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 1000; max-height: 200px; overflow-y: auto; margin-top: 4px;"
+                >
+                  <div 
+                    v-for="c in matchingCustomers" 
+                    :key="c.id"
+                    @click="selectCustomerForOrder(c)"
+                    style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.15rem; transition: background 0.2s;"
+                    onmouseover="this.style.background='var(--bg-hover)';"
+                    onmouseout="this.style.background='transparent';"
+                  >
+                    <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">{{ c.phone }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ c.name }}</div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -440,11 +462,9 @@
 
         <div class="modal-footer no-print">
           <button class="btn btn-secondary" @click="selectedReceiptOrder = null">Close</button>
-          <button class="btn btn-primary" @click="printReceipt">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.82l-.024-.03H5.385a2.25 2.25 0 00-2.25 2.25v3.75a2.25 2.25 0 002.25 2.25h13.23a2.25 2.25 0 002.25-2.25v-3.75a2.25 2.25 0 00-2.25-2.25h-1.312l-.024.03m-12.825-4.526A2.25 2.25 0 017.5 12h9a2.25 2.25 0 012.235 2.046M12 16.5v-6M12 7.5h.008v.008H12V7.5z" />
-            </svg>
-            Print Receipt
+          <button class="btn btn-primary" @click="printReceipt" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <i class="ti ti-printer" style="font-size: 1.25rem;"></i>
+            <span>Print Receipt</span>
           </button>
         </div>
       </div>
@@ -470,7 +490,7 @@
             <div><strong>Phone Number:</strong> {{ dispatchingOrder.customerPhone }}</div>
             <div style="margin-top: 0.5rem; font-weight: 500;">Items to Deliver:</div>
             <div v-for="item in dispatchingOrder.items" :key="item.slNo" style="margin-left: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
-              • {{ item.material }} &times; {{ item.qty }}
+              {{ item.material }} &times; {{ item.qty }}
             </div>
           </div>
 
@@ -612,6 +632,26 @@ watch(() => newOrder.value.customerPhone, (newPhone) => {
       newOrder.value.customerName = existing.name
     }
   }
+})
+
+const showCustomerDropdown = ref(false)
+const selectCustomerForOrder = (customer: any) => {
+  newOrder.value.customerPhone = customer.phone
+  newOrder.value.customerName = customer.name
+  showCustomerDropdown.value = false
+}
+const hideCustomerDropdownWithDelay = () => {
+  setTimeout(() => {
+    showCustomerDropdown.value = false
+  }, 200)
+}
+const matchingCustomers = computed(() => {
+  const query = newOrder.value.customerPhone.toLowerCase().trim()
+  if (!query) return customers.value
+  return customers.value.filter(c => 
+    c.phone.toLowerCase().includes(query) || 
+    c.name.toLowerCase().includes(query)
+  )
 })
 
 const openCreateModal = () => {

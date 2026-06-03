@@ -7,11 +7,9 @@
         <p class="subtitle">Manage client accounts and trace their order history</p>
       </div>
       <div>
-        <button class="btn btn-primary" @click="showAddModal = true">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-          </svg>
-          Add Customer
+        <button class="btn btn-primary" @click="showAddModal = true" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+          <i class="ti ti-user-plus" style="font-size: 1.25rem;"></i>
+          <span>Add Customer</span>
         </button>
       </div>
     </div>
@@ -91,8 +89,6 @@
             <h3 style="font-size: 1.2rem; color: var(--color-primary);">{{ selectedCustomer.name }}</h3>
             <p style="font-size: 0.9rem;" class="mt-1">
               <strong>Phone:</strong> {{ selectedCustomer.phone }} <br/>
-              <strong>Email:</strong> {{ selectedCustomer.email }} <br/>
-              <strong>Address:</strong> {{ selectedCustomer.address }} <br/>
               <span class="text-secondary" style="font-size: 0.8rem;">Joined {{ selectedCustomer.joinedDate }}</span>
             </p>
           </div>
@@ -105,8 +101,7 @@
             <div 
               v-for="order in selectedCustomerOrders" 
               :key="order.id"
-              style="background: var(--bg-hover); border-radius: var(--radius-md); padding: 1rem; border-left: 4px solid var(--color-primary);"
-              :style="{ borderLeftColor: order.status === 'ready' ? 'var(--color-success)' : order.status === 'dispatched' ? 'var(--text-muted)' : 'var(--color-warning)' }"
+              style="background: var(--bg-hover); border-radius: var(--radius-md); padding: 1rem; border: 1px solid var(--border-color);"
             >
               <div class="flex justify-between items-center">
                 <strong>{{ order.id }}</strong>
@@ -116,7 +111,7 @@
                 <span class="text-secondary">
                   <strong style="text-transform: capitalize;">{{ order.orderType === 'washing' ? '🧼 Washing' : '💨 Ironing' }}</strong>
                   <div v-for="item in order.items" :key="item.slNo" style="font-size: 0.8rem; margin-top: 2px;">
-                    • {{ item.material }} (x{{ item.qty }})
+                    {{ item.material }} (x{{ item.qty }})
                   </div>
                 </span>
                 <strong>₹{{ order.totalPrice.toFixed(2) }}</strong>

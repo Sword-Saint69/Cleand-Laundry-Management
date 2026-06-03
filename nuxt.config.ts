@@ -8,6 +8,9 @@ export default defineNuxtConfig({
       title: 'Cleand - Laundry Management System',
       meta: [
         { name: 'description', content: 'Modern, high-performance laundry shop management and analytics system.' }
+      ],
+      link: [
+        { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css' }
       ]
     }
   }

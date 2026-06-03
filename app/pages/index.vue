@@ -7,11 +7,9 @@
         <p class="subtitle">Overview of current laundry shop operations</p>
       </div>
       <div>
-        <NuxtLink to="/orders" class="btn btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          New Order
+        <NuxtLink to="/orders" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+          <i class="ti ti-plus" style="font-size: 1.25rem;"></i>
+          <span>New Order</span>
         </NuxtLink>
       </div>
     </div>
@@ -21,9 +19,7 @@
       <!-- Active Orders -->
       <div class="metric-card">
         <div class="metric-icon metric-blue">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px;">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
-          </svg>
+          <i class="ti ti-clipboard-list"></i>
         </div>
         <div class="metric-info">
           <span class="metric-label">Active Orders</span>
@@ -37,9 +33,7 @@
       <!-- Washing status -->
       <div class="metric-card">
         <div class="metric-icon metric-orange">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px;">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-          </svg>
+          <i class="ti ti-wash"></i>
         </div>
         <div class="metric-info">
           <span class="metric-label">Washing Queue</span>
@@ -53,9 +47,7 @@
       <!-- Ready for Delivery -->
       <div class="metric-card">
         <div class="metric-icon metric-green">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px;">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <i class="ti ti-circle-check"></i>
         </div>
         <div class="metric-info">
           <span class="metric-label">Ready for Pickup</span>
@@ -68,9 +60,7 @@
 
       <div class="metric-card">
         <div class="metric-icon metric-purple">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px;">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M12 16v1" />
-          </svg>
+          <i class="ti ti-currency-rupee"></i>
         </div>
         <div class="metric-info">
           <span class="metric-label">Total Revenue</span>
@@ -122,7 +112,7 @@
                 </td>
                 <td>
                   <div v-for="item in order.items" :key="item.slNo" style="font-size: 0.85rem; line-height: 1.3;">
-                    • {{ item.material }} (x{{ item.qty }})
+                    {{ item.material }} (x{{ item.qty }})
                   </div>
                 </td>
                 <td>
@@ -242,7 +232,7 @@
           <div><strong>Phone Number:</strong> {{ dispatchingOrder.customerPhone }}</div>
           <div style="margin-top: 0.5rem; font-weight: 500;">Items to Deliver:</div>
           <div v-for="item in dispatchingOrder.items" :key="item.slNo" style="margin-left: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
-            • {{ item.material }} &times; {{ item.qty }}
+            {{ item.material }} &times; {{ item.qty }}
           </div>
         </div>
 
