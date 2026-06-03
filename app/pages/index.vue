@@ -1,18 +1,22 @@
 <template>
-  <div>
-    <!-- Page Title Header -->
-    <div class="page-header">
-      <div>
-        <h1>Dashboard</h1>
-        <p class="subtitle">Overview of current laundry shop operations</p>
+  <div class="seo-layout">
+    <!-- Semantic header & main page structure -->
+    <main id="maincontent">
+      <!-- Page Title Header -->
+      <div class="page-header">
+        <div>
+          <h1>Dashboard Overview</h1>
+          <p class="subtitle">Real-time status updates and key metrics for laundry shop operations</p>
+        </div>
+        <div class="no-print">
+          <NuxtLink to="/orders" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <i class="ti ti-plus" style="font-size: 1.25rem;"></i>
+            <span>New Order</span>
+          </NuxtLink>
+        </div>
       </div>
-      <div>
-        <NuxtLink to="/orders" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.25rem;">
-          <i class="ti ti-plus" style="font-size: 1.25rem;"></i>
-          <span>New Order</span>
-        </NuxtLink>
-      </div>
-    </div>
+
+
 
     <!-- Quick Stats Metrics -->
     <div class="metrics-grid">
@@ -210,11 +214,11 @@
         </div>
       </div>
     </div>
-  </div>
+    
+    <!-- Dispatch & Pay Modal -->
+    <div class="modal-backdrop" v-if="dispatchingOrder" @click="dispatchingOrder = null">
+      <div class="modal-content" style="max-width: 500px;" @click.stop>
 
-  <!-- Dispatch & Pay Modal -->
-  <div class="modal-backdrop" v-if="dispatchingOrder" @click="dispatchingOrder = null">
-    <div class="modal-content" style="max-width: 500px;" @click.stop>
       <div class="modal-header">
         <h2>Order Dispatch & Payment</h2>
         <button 
@@ -293,12 +297,56 @@
         </button>
       </div>
     </div>
+    </div>
+
+    </main>
+
+    <!-- Semantic Footer -->
+    <footer class="no-print" style="margin-top: 3rem; padding: 2rem 0; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+      <p>&copy; 2026 Cleand Laundry Management System. All Rights Reserved.</p>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useLaundryStore, type Order, type OrderStatus } from '~/composables/useLaundryStore'
+
+// SEO optimization configuration setup
+useSeoMeta({
+  title: 'Cleand - Advanced Laundry Management System Dashboard',
+  description: 'Log and track orders, manage payments, audit live active washing/ironing queue statuses, and monitor collections in real-time.',
+  ogTitle: 'Cleand - Advanced Laundry Management Dashboard',
+  ogDescription: 'Real-time billing, collections ledger, and automated queue tracking for laundry businesses.',
+  ogImage: 'https://cleand.laundry/logo.png',
+  twitterCard: 'summary_large_image'
+})
+
+// Schema.org Structured Data
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        'name': 'Cleand Laundry Billing System',
+        'applicationCategory': 'BusinessApplication',
+        'operatingSystem': 'Web',
+        'offers': {
+          '@type': 'Offer',
+          'price': '0.00',
+          'priceCurrency': 'INR'
+        },
+        'author': {
+          '@type': 'Organization',
+          'name': 'Cleand Inc.',
+          'logo': 'https://cleand.laundry/logo.png'
+        }
+      })
+    }
+  ]
+})
 
 const store = useLaundryStore()
 const { 

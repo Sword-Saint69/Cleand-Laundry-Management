@@ -1,2 +1,6 @@
 User-Agent: *
-Disallow:
+Disallow: /admin
+Disallow: /_nuxt/
+Disallow: /api/
+
+Sitemap: https://cleand.laundry/sitemap.xml

@@ -1,22 +1,33 @@
 <template>
-  <div>
-    <!-- Page Header with Print & Export Actions -->
-    <div class="page-header">
-      <div>
-        <h1>Reports & Collections</h1>
-        <p class="subtitle">Analyze cash inflow, logged overhead expenses, and net profit margins</p>
+  <div class="seo-layout">
+    <!-- Semantic Breadcrumbs -->
+    <nav class="seo-breadcrumbs no-print" aria-label="Breadcrumb" style="font-size: 0.85rem; margin-bottom: 1rem; color: var(--text-muted);">
+      <ol style="list-style: none; display: flex; gap: 0.5rem; padding: 0;">
+        <li><NuxtLink to="/" style="color: var(--color-primary); text-decoration: none;">Home</NuxtLink></li>
+        <li style="color: var(--text-muted);">&raquo;</li>
+        <li style="color: var(--text-primary); font-weight: 500;">Reports</li>
+      </ol>
+    </nav>
+
+    <main id="maincontent">
+      <!-- Page Header with Print & Export Actions -->
+      <div class="page-header">
+        <div>
+          <h1>Reports & Collections Dashboard</h1>
+          <p class="subtitle">Analyze bookkeeping cash inflow, overhead expenses payouts, and profit margins</p>
+        </div>
+        <div class="no-print" style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary" @click="exportToCSV" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            <i class="ti ti-download" style="font-size: 1.1rem;"></i>
+            <span>Export CSV</span>
+          </button>
+          <button class="btn btn-primary" @click="printReport" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            <i class="ti ti-printer" style="font-size: 1.1rem;"></i>
+            <span>Print Summary</span>
+          </button>
+        </div>
       </div>
-      <div class="no-print" style="display: flex; gap: 0.75rem;">
-        <button class="btn btn-secondary" @click="exportToCSV" style="display: inline-flex; align-items: center; gap: 0.35rem;">
-          <i class="ti ti-download" style="font-size: 1.1rem;"></i>
-          <span>Export CSV</span>
-        </button>
-        <button class="btn btn-primary" @click="printReport" style="display: inline-flex; align-items: center; gap: 0.35rem;">
-          <i class="ti ti-printer" style="font-size: 1.1rem;"></i>
-          <span>Print Summary</span>
-        </button>
-      </div>
-    </div>
+
 
     <!-- Calendar Range Panel -->
     <div class="panel-card no-print" style="margin-bottom: 2rem;">
@@ -275,12 +286,28 @@
         </div>
       </div>
     </div>
+    </main>
+
+    <!-- Semantic Footer -->
+    <footer class="no-print" style="margin-top: 3rem; padding: 2rem 0; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+      <p>&copy; 2026 Cleand Laundry Management System. All Rights Reserved.</p>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useLaundryStore } from '~/composables/useLaundryStore'
+
+// SEO optimization config
+useSeoMeta({
+  title: 'Cleand - Laundry Ledger Reports & Revenue Collections Analytics',
+  description: 'View datewise washing and ironing cash inflows, export bookkeeping statements to CSV, and analyze operational expense outflows.',
+  ogTitle: 'Cleand - Laundry Financial Ledger Reports',
+  ogDescription: 'Track ledger collections, export business statements, and audit salary and overhead expenses.',
+  ogImage: 'https://cleand.laundry/logo.png',
+  twitterCard: 'summary_large_image'
+})
 
 const store = useLaundryStore()
 const { orders, expenses, isLoaded } = store

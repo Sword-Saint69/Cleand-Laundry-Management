@@ -1,18 +1,31 @@
 <template>
-  <div>
+  <div class="seo-layout">
+    <!-- Semantic Breadcrumbs -->
+    <nav class="seo-breadcrumbs no-print" aria-label="Breadcrumb" style="font-size: 0.85rem; margin-bottom: 1rem; color: var(--text-muted);">
+      <ol style="list-style: none; display: flex; gap: 0.5rem; padding: 0;">
+        <li><NuxtLink to="/" style="color: var(--color-primary); text-decoration: none;">Home</NuxtLink></li>
+        <li style="color: var(--text-muted);">&raquo;</li>
+        <li style="color: var(--text-primary); font-weight: 500;">Orders</li>
+      </ol>
+    </nav>
+
     <!-- Header -->
     <div class="page-header">
       <div>
-        <h1>Laundry Orders</h1>
-        <p class="subtitle">Create and oversee customer laundry batches</p>
+        <h1>Laundry Orders Database</h1>
+        <p class="subtitle">Create, audit, and oversee active customer laundry orders</p>
       </div>
       <div>
         <button class="btn btn-primary" @click="openCreateModal" style="display: inline-flex; align-items: center; gap: 0.25rem;">
           <i class="ti ti-plus" style="font-size: 1.25rem;"></i>
-          <span>Create New Order</span>
         </button>
       </div>
     </div>
+    
+    <main id="maincontent">
+
+
+
 
     <!-- Filters & Search -->
     <div class="panel-card" style="margin-bottom: 2rem;">
@@ -552,12 +565,55 @@
         </div>
       </div>
     </div>
+    </main>
+
+    <!-- Semantic Footer -->
+    <footer class="no-print" style="margin-top: 3rem; padding: 2rem 0; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+      <p>&copy; 2026 Cleand Laundry Management System. All Rights Reserved.</p>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useLaundryStore, type OrderStatus, type OrderItem } from '~/composables/useLaundryStore'
+
+// SEO optimizations
+useSeoMeta({
+  title: 'Cleand - Laundry Orders Registry & Status Tracker',
+  description: 'Manage active queues, dispatch ready batches, process discounts, handle invoice payments, and search laundry database records.',
+  ogTitle: 'Cleand - Laundry Orders Registry',
+  ogDescription: 'Manage active queues, dispatch ready batches, process discounts, handle invoice payments, and search laundry database records.',
+  ogImage: 'https://cleand.laundry/logo.png',
+  twitterCard: 'summary_large_image'
+})
+
+// Breadcrumb Schema
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          {
+            '@type': 'ListItem',
+            'position': 1,
+            'name': 'Home',
+            'item': 'https://cleand.laundry/'
+          },
+          {
+            '@type': 'ListItem',
+            'position': 2,
+            'name': 'Orders',
+            'item': 'https://cleand.laundry/orders'
+          }
+        ]
+      })
+    }
+  ]
+})
 
 const store = useLaundryStore()
 const { orders, customers, services, stains, isLoaded, addOrder, updateOrderStatus, dispatchOrder, deleteOrder } = store
