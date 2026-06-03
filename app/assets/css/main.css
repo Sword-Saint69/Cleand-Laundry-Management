@@ -398,6 +398,8 @@ tr:hover td {
 .badge-draft { background: rgba(245, 158, 11, 0.15); color: var(--color-warning); }
 .badge-ready { background: rgba(16, 185, 129, 0.15); color: var(--color-success); }
 .badge-dispatched { background: rgba(100, 116, 139, 0.15); color: var(--text-secondary); }
+.badge-dispatched-for-washing { background: rgba(2, 132, 199, 0.15); color: var(--color-primary); }
+.badge-washed { background: rgba(13, 148, 136, 0.15); color: var(--color-success); }
 
 @keyframes wash-pulse {
   0%, 100% { opacity: 1; }

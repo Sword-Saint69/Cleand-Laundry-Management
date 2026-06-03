@@ -90,7 +90,7 @@
               </td>
               <td>
                 <div v-for="item in order.items" :key="item.slNo" style="font-size: 0.85rem; line-height: 1.35; margin-bottom: 2px;">
-                  • {{ item.material }} (x{{ item.qty }} &times; ₹{{ item.price }})
+                  • {{ item.material }} <span v-if="order.orderType === 'washing' && item.stains && item.stains !== 'None'" style="font-size: 0.75rem; color: var(--color-danger); font-weight: 600;">[{{ item.stains }} Stains]</span> (x{{ item.qty }} &times; ₹{{ item.price }})
                 </div>
               </td>
               <td>
@@ -106,12 +106,26 @@
                 </span>
               </td>
               <td @click.stop>
+                <!-- If Ironing order -->
                 <select 
+                  v-if="order.orderType === 'ironing'"
                   :value="order.status" 
                   @change="changeStatus(order.id, $event)" 
                   style="padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: var(--radius-sm);"
                 >
                   <option value="draft">Draft</option>
+                  <option value="ready">Ready</option>
+                  <option value="dispatched">Dispatched</option>
+                </select>
+                <!-- If Washing order -->
+                <select 
+                  v-else
+                  :value="order.status" 
+                  @change="changeStatus(order.id, $event)" 
+                  style="padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: var(--radius-sm);"
+                >
+                  <option value="dispatched for washing">Dispatched for Washing</option>
+                  <option value="washed">Washed</option>
                   <option value="ready">Ready</option>
                   <option value="dispatched">Dispatched</option>
                 </select>
@@ -129,7 +143,7 @@
 
     <!-- Create Order Modal -->
     <div class="modal-backdrop" v-if="showCreateModal">
-      <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-content" style="max-width: 850px; width: 90%;">
         <div class="modal-header">
           <h2>Create New Order</h2>
           <button 
@@ -211,6 +225,7 @@
                     <tr>
                       <th style="padding: 0.5rem; width: 60px; text-align: center;">Sl No</th>
                       <th style="padding: 0.5rem;">Material</th>
+                      <th v-if="newOrder.orderType === 'washing'" style="padding: 0.5rem; width: 120px;">Stains</th>
                       <th style="padding: 0.5rem; width: 90px;">Qty</th>
                       <th style="padding: 0.5rem; width: 110px;">Price (₹)</th>
                       <th style="padding: 0.5rem; width: 110px;">Total (₹)</th>
@@ -232,6 +247,16 @@
                           <option v-for="srv in services" :key="srv.id" :value="srv.name">
                             {{ srv.name }}
                           </option>
+                        </select>
+                      </td>
+                      <td v-if="newOrder.orderType === 'washing'" style="padding: 0.25rem;">
+                        <select 
+                          v-model="item.stains" 
+                          style="padding: 0.4rem; font-size: 0.85rem; width: 100%; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: var(--radius-sm);"
+                        >
+                          <option value="None">None</option>
+                          <option value="Mild">Mild</option>
+                          <option value="Heavy">Heavy</option>
                         </select>
                       </td>
                       <td style="padding: 0.25rem;">
@@ -382,7 +407,12 @@
             </thead>
             <tbody>
               <tr v-for="item in selectedReceiptOrder.items" :key="item.slNo" style="border-bottom: 1px dashed #eee;">
-                <td style="padding: 6px 0; font-size: 0.8rem; color: #000;">{{ item.material }}</td>
+                <td style="padding: 6px 0; font-size: 0.8rem; color: #000;">
+                  {{ item.material }}
+                  <span v-if="selectedReceiptOrder.orderType === 'washing' && item.stains && item.stains !== 'None'" style="font-size: 0.7rem; color: var(--color-danger); font-weight: bold; display: block;">
+                    [Stains: {{ item.stains }}]
+                  </span>
+                </td>
                 <td style="padding: 6px 0; text-align: center; font-size: 0.8rem; color: #000;">{{ item.qty }}</td>
                 <td style="padding: 6px 0; text-align: right; font-size: 0.8rem; color: #000;">₹{{ Number(item.price).toFixed(2) }}</td>
                 <td style="padding: 6px 0; text-align: right; font-size: 0.8rem; color: #000;">₹{{ (Number(item.qty) * Number(item.price)).toFixed(2) }}</td>
@@ -593,7 +623,7 @@ const selectOrderTypeStep = (type: 'washing' | 'ironing') => {
   newOrder.value.orderType = type
   // Initialize with one default item row to start
   newOrder.value.items = [
-    { slNo: 1, material: '', qty: 1, price: 0, total: 0 }
+    { slNo: 1, material: '', stains: 'None', qty: 1, price: 0, total: 0 }
   ]
   orderStep.value = 2
 }
@@ -611,6 +641,7 @@ const addNewItemRow = () => {
   newOrder.value.items.push({
     slNo: newOrder.value.items.length + 1,
     material: '',
+    stains: 'None',
     qty: 1,
     price: 0,
     total: 0

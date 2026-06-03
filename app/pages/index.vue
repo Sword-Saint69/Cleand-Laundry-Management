@@ -18,6 +18,7 @@
 
     <!-- Quick Stats Metrics -->
     <div class="metrics-grid">
+      <!-- Active Orders -->
       <div class="metric-card">
         <div class="metric-icon metric-blue">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px;">
@@ -27,9 +28,13 @@
         <div class="metric-info">
           <span class="metric-label">Active Orders</span>
           <span class="metric-value">{{ activeOrdersCount }}</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+            🧼 Wash: {{ washingActiveOrders.length }} | 💨 Iron: {{ ironingActiveOrders.length }}
+          </span>
         </div>
       </div>
 
+      <!-- Washing status -->
       <div class="metric-card">
         <div class="metric-icon metric-orange">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px;">
@@ -37,11 +42,15 @@
           </svg>
         </div>
         <div class="metric-info">
-          <span class="metric-label">Draft Orders</span>
-          <span class="metric-value">{{ draftOrdersCount }}</span>
+          <span class="metric-label">Washing Queue</span>
+          <span class="metric-value">{{ washingActiveOrders.filter(o => o.status !== 'ready').length }}</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+            In Wash: {{ washingActiveOrders.filter(o => o.status === 'dispatched for washing').length }} | Washed: {{ washingActiveOrders.filter(o => o.status === 'washed').length }}
+          </span>
         </div>
       </div>
 
+      <!-- Ready for Delivery -->
       <div class="metric-card">
         <div class="metric-icon metric-green">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px;">
@@ -51,6 +60,9 @@
         <div class="metric-info">
           <span class="metric-label">Ready for Pickup</span>
           <span class="metric-value">{{ readyOrdersCount }}</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+            🧼 Wash: {{ washingActiveOrders.filter(o => o.status === 'ready').length }} | 💨 Iron: {{ ironingActiveOrders.filter(o => o.status === 'ready').length }}
+          </span>
         </div>
       </div>
 
@@ -119,8 +131,8 @@
                   </span>
                 </td>
                 <td>
-                  <span :class="['badge', `badge-${order.status}`]">
-                    {{ order.status }}
+                  <span :class="['badge', `badge-${order.status.replace(/\s+/g, '-')}`]">
+                    {{ order.status === 'dispatched for washing' ? 'D/W' : order.status }}
                   </span>
                 </td>
                 <td class="text-right">
@@ -129,9 +141,9 @@
                       v-if="order.status !== 'ready'" 
                       class="btn btn-secondary btn-sm"
                       @click="advanceStatus(order)"
-                      title="Advance to next step"
+                      :title="getNextStepTitle(order)"
                     >
-                      Next Step →
+                      {{ getNextStepText(order) }} →
                     </button>
                     <button 
                       v-else 
@@ -151,15 +163,43 @@
       <!-- Quick Status Distribution Sidebar Card -->
       <div class="panel-card">
         <h2>Queue Insights</h2>
-        <p class="subtitle mb-1">Status breakdown</p>
+        <p class="subtitle mb-1">Status breakdown by Service Category</p>
 
-        <div class="order-progress-wrapper" v-for="stat in statusStats" :key="stat.name">
-          <div class="flex justify-between items-center mb-1">
-            <span style="font-weight: 500; font-size: 0.9rem; text-transform: capitalize;">{{ stat.name }}</span>
-            <span style="font-size: 0.85rem;" class="text-secondary">{{ stat.count }} orders ({{ stat.percentage }}%)</span>
+        <!-- Washing breakdown -->
+        <div style="margin-top: 1.25rem;">
+          <h3 style="font-size: 0.95rem; color: var(--color-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+            <span>🧼</span> Washing Queue
+          </h3>
+          <div v-if="washingActiveOrders.length === 0" class="text-secondary" style="font-size: 0.85rem; padding: 0.5rem 0;">
+            No active washing batches.
           </div>
-          <div class="progress-track">
-            <div class="progress-fill" :style="{ width: `${stat.percentage}%`, backgroundColor: stat.color }"></div>
+          <div v-else v-for="stat in washingStats" :key="stat.name" class="order-progress-wrapper" style="margin-top: 0.75rem;">
+            <div class="flex justify-between items-center mb-1">
+              <span style="font-weight: 500; font-size: 0.85rem; text-transform: capitalize;">{{ stat.name }}</span>
+              <span style="font-size: 0.8rem;" class="text-secondary">{{ stat.count }} orders ({{ stat.percentage }}%)</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" :style="{ width: `${stat.percentage}%`, backgroundColor: stat.color }"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ironing breakdown -->
+        <div style="margin-top: 2rem; border-top: 1px dashed var(--border-color); padding-top: 1.25rem;">
+          <h3 style="font-size: 0.95rem; color: var(--color-success); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+            <span>💨</span> Ironing Queue
+          </h3>
+          <div v-if="ironingActiveOrders.length === 0" class="text-secondary" style="font-size: 0.85rem; padding: 0.5rem 0;">
+            No active ironing batches.
+          </div>
+          <div v-else v-for="stat in ironingStats" :key="stat.name" class="order-progress-wrapper" style="margin-top: 0.75rem;">
+            <div class="flex justify-between items-center mb-1">
+              <span style="font-weight: 500; font-size: 0.85rem; text-transform: capitalize;">{{ stat.name }}</span>
+              <span style="font-size: 0.8rem;" class="text-secondary">{{ stat.count }} orders ({{ stat.percentage }}%)</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" :style="{ width: `${stat.percentage}%`, backgroundColor: stat.color }"></div>
+            </div>
           </div>
         </div>
 
@@ -331,8 +371,26 @@ const activeOrders = computed(() => {
 // Define sequence of statuses for easy updates
 const statusSequence: OrderStatus[] = ['draft', 'ready', 'dispatched']
 
+const getNextStepText = (order: Order) => {
+  if (order.status === 'dispatched for washing') return 'Mark Washed'
+  if (order.status === 'washed') return 'Mark Ready'
+  if (order.status === 'draft') return 'Mark Ready'
+  return 'Next Step'
+}
+
+const getNextStepTitle = (order: Order) => {
+  if (order.status === 'dispatched for washing') return 'Set status to Washed'
+  if (order.status === 'washed') return 'Set status to Ready'
+  if (order.status === 'draft') return 'Set status to Ready'
+  return 'Advance status'
+}
+
 const advanceStatus = (order: Order) => {
   if (order.status === 'draft') {
+    updateOrderStatus(order.id, 'ready')
+  } else if (order.status === 'dispatched for washing') {
+    updateOrderStatus(order.id, 'washed')
+  } else if (order.status === 'washed') {
     updateOrderStatus(order.id, 'ready')
   }
 }
@@ -344,20 +402,43 @@ const deliverOrder = (order: Order) => {
 // Compute statistics breakdown
 const statusColors: Record<string, string> = {
   draft: 'var(--color-warning)',
+  'dispatched for washing': 'var(--color-primary)',
+  washed: 'var(--color-info)',
   ready: 'var(--color-success)'
 }
 
-const statusStats = computed(() => {
+const washingActiveOrders = computed(() => activeOrders.value.filter(o => o.orderType === 'washing'))
+const ironingActiveOrders = computed(() => activeOrders.value.filter(o => o.orderType === 'ironing'))
+
+const washingStats = computed(() => {
+  const statuses = ['dispatched for washing', 'washed', 'ready']
+  const total = washingActiveOrders.value.length || 1
+  const list = statuses.map(s => {
+    const count = washingActiveOrders.value.filter(o => o.status === s).length
+    let label = s
+    if (s === 'dispatched for washing') label = 'In Washing'
+    return {
+      name: label,
+      count,
+      percentage: Math.round((count / total) * 100),
+      color: statusColors[s] || 'var(--text-secondary)'
+    }
+  }).filter(stat => stat.count > 0)
+  return washingActiveOrders.value.length > 0 ? list : []
+})
+
+const ironingStats = computed(() => {
   const statuses = ['draft', 'ready']
-  const total = activeOrders.value.length || 1
-  return statuses.map(s => {
-    const count = activeOrders.value.filter(o => o.status === s).length
+  const total = ironingActiveOrders.value.length || 1
+  const list = statuses.map(s => {
+    const count = ironingActiveOrders.value.filter(o => o.status === s).length
     return {
       name: s,
       count,
       percentage: Math.round((count / total) * 100),
       color: statusColors[s] || 'var(--text-secondary)'
     }
-  })
+  }).filter(stat => stat.count > 0)
+  return ironingActiveOrders.value.length > 0 ? list : []
 })
 </script>

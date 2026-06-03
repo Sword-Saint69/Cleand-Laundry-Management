@@ -22,6 +22,8 @@
           <select v-model="statusFilter" style="flex: 1; min-width: 150px;">
             <option value="all">All Statuses</option>
             <option value="draft">Draft</option>
+            <option value="dispatched for washing">Dispatched for Washing</option>
+            <option value="washed">Washed</option>
             <option value="ready">Ready</option>
             <option value="dispatched">Dispatched</option>
           </select>
@@ -169,7 +171,12 @@
             </thead>
             <tbody>
               <tr v-for="item in selectedReceiptOrder.items" :key="item.slNo" style="border-bottom: 1px dashed #eee;">
-                <td style="padding: 6px 0; font-size: 0.8rem; color: #000;">{{ item.material }}</td>
+                <td style="padding: 6px 0; font-size: 0.8rem; color: #000;">
+                  {{ item.material }}
+                  <span v-if="selectedReceiptOrder.orderType === 'washing' && item.stains && item.stains !== 'None'" style="font-size: 0.7rem; color: var(--color-danger); font-weight: bold; display: block;">
+                    [Stains: {{ item.stains }}]
+                  </span>
+                </td>
                 <td style="padding: 6px 0; text-align: center; font-size: 0.8rem; color: #000;">{{ item.qty }}</td>
                 <td style="padding: 6px 0; text-align: right; font-size: 0.8rem; color: #000;">₹{{ Number(item.price).toFixed(2) }}</td>
                 <td style="padding: 6px 0; text-align: right; font-size: 0.8rem; color: #000;">₹{{ (Number(item.qty) * Number(item.price)).toFixed(2) }}</td>

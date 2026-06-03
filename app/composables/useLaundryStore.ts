@@ -28,12 +28,13 @@ export interface Customer {
 export interface OrderItem {
   slNo: number
   material: string
+  stains?: string
   qty: number
   price: number
   total: number
 }
 
-export type OrderStatus = 'draft' | 'ready' | 'dispatched'
+export type OrderStatus = 'draft' | 'ready' | 'dispatched' | 'dispatched for washing' | 'washed'
 
 export interface Order {
   id: string
@@ -94,7 +95,15 @@ export const useLaundryStore = () => {
 
   // Order Actions
   const addOrder = async (orderData: Omit<Order, 'id' | 'customerId' | 'orderDate' | 'totalPrice'>) => {
-    const id = `ORD-${Math.floor(1000 + Math.random() * 9000)}`
+    let nextNum = 1
+    if (orders.value.length > 0) {
+      const numbers = orders.value.map(o => {
+        const match = o.id.match(/^CLND-(\d+)$/)
+        return match ? parseInt(match[1], 10) : 0
+      })
+      nextNum = Math.max(...numbers, 0) + 1
+    }
+    const id = `CLND-${String(nextNum).padStart(3, '0')}`
     const orderDate = new Date().toISOString()
     
     // Auto-create or find customer by phone number
@@ -130,11 +139,14 @@ export const useLaundryStore = () => {
       calcPrice = calcPrice * 1.2
     }
 
+    const initialStatus: OrderStatus = orderData.orderType === 'washing' ? 'dispatched for washing' : 'draft'
+
     const finalOrder: Order = {
       ...orderData,
       id,
       customerId: finalCustomerId,
       orderDate,
+      status: initialStatus,
       totalPrice: Number(calcPrice.toFixed(2))
     }
 
