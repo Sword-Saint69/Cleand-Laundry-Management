@@ -10,7 +10,8 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Modern, high-performance laundry shop management and analytics system.' }
       ],
       link: [
-        { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css' }
+        { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css' },
+        { rel: 'icon', type: 'image/png', href: '/logo.png' }
       ]
     }
   }

@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar no-print">
       <div class="brand">
         <img src="/logo.png" alt="Cleand Logo" class="brand-logo-img" />
       </div>

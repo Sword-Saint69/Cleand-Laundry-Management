@@ -576,32 +576,44 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-/* Print Invoice Styles */
+/* Print Overrides */
 @media print {
   body {
     background: #ffffff !important;
     color: #000000 !important;
   }
-  body * {
-    visibility: hidden;
+  
+  /* Hide sidebar and print-exempt buttons/menus */
+  .no-print,
+  .sidebar,
+  .btn,
+  button,
+  .modal-header button {
+    display: none !important;
   }
-  .print-invoice-modal,
-  .print-invoice-modal * {
-    visibility: visible;
+
+  /* Reset main content margins to allow full page print width */
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
-  .print-invoice-modal {
-    position: absolute;
-    left: 0;
-    top: 0;
+
+  /* Optimize modal print layouts so it overlays standard text cleanly */
+  .modal-backdrop {
+    position: absolute !important;
+    background: none !important;
+    backdrop-filter: none !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .modal-content {
+    box-shadow: none !important;
+    border: none !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 2rem !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-    border: none !important;
-  }
-  .no-print {
-    display: none !important;
+    padding: 0 !important;
   }
 }
