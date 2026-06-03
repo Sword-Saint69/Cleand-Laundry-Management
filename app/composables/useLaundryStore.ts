@@ -55,10 +55,41 @@ export interface Order {
   paymentStatus?: 'paid' | 'unpaid'
 }
 
+export interface Stain {
+  id: string
+  name: string
+}
+
+export interface Employee {
+  id: string
+  name: string
+  phone: string
+  role: string
+}
+
+export interface ExpenseCategory {
+  id: string
+  name: string
+}
+
+export interface Expense {
+  id: string
+  date: string
+  categoryName: string
+  amount: number
+  employeeId?: string
+  employeeName?: string
+  notes: string
+}
+
 export const useLaundryStore = () => {
   const services = ref<Service[]>([])
   const customers = ref<Customer[]>([])
   const orders = ref<Order[]>([])
+  const stains = ref<Stain[]>([])
+  const employees = ref<Employee[]>([])
+  const expenseCategories = ref<ExpenseCategory[]>([])
+  const expenses = ref<Expense[]>([])
   const isLoaded = ref(false)
 
   // Real-time synchronization listeners
@@ -90,6 +121,43 @@ export const useLaundryStore = () => {
       // Sort orders descending by order date
       orders.value = list.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
       isLoaded.value = true
+    })
+
+    // Listen to Stains
+    onSnapshot(collection(db, 'stains'), (snapshot) => {
+      const list: Stain[] = []
+      snapshot.forEach(doc => {
+        list.push(doc.data() as Stain)
+      })
+      stains.value = list
+    })
+
+    // Listen to Employees
+    onSnapshot(collection(db, 'employees'), (snapshot) => {
+      const list: Employee[] = []
+      snapshot.forEach(doc => {
+        list.push(doc.data() as Employee)
+      })
+      employees.value = list
+    })
+
+    // Listen to Expense Categories
+    onSnapshot(collection(db, 'expense_categories'), (snapshot) => {
+      const list: ExpenseCategory[] = []
+      snapshot.forEach(doc => {
+        list.push(doc.data() as ExpenseCategory)
+      })
+      expenseCategories.value = list
+    })
+
+    // Listen to Expenses
+    onSnapshot(collection(db, 'expenses'), (snapshot) => {
+      const list: Expense[] = []
+      snapshot.forEach(doc => {
+        list.push(doc.data() as Expense)
+      })
+      // Sort expenses by date descending
+      expenses.value = list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     })
   })
 
@@ -218,6 +286,54 @@ export const useLaundryStore = () => {
     await deleteDoc(doc(db, 'services', id))
   }
 
+  // Stain Actions
+  const addStain = async (name: string) => {
+    const id = `stain-${Math.floor(100 + Math.random() * 900)}`
+    const val = { id, name }
+    await setDoc(doc(db, 'stains', id), val)
+    return val
+  }
+
+  const deleteStain = async (id: string) => {
+    await deleteDoc(doc(db, 'stains', id))
+  }
+
+  // Employee Actions
+  const addEmployee = async (employeeData: Omit<Employee, 'id'>) => {
+    const id = `emp-${Math.floor(100 + Math.random() * 900)}`
+    const val = { ...employeeData, id }
+    await setDoc(doc(db, 'employees', id), val)
+    return val
+  }
+
+  const deleteEmployee = async (id: string) => {
+    await deleteDoc(doc(db, 'employees', id))
+  }
+
+  // Expense Category Actions
+  const addExpenseCategory = async (name: string) => {
+    const id = `expcat-${Math.floor(100 + Math.random() * 900)}`
+    const val = { id, name }
+    await setDoc(doc(db, 'expense_categories', id), val)
+    return val
+  }
+
+  const deleteExpenseCategory = async (id: string) => {
+    await deleteDoc(doc(db, 'expense_categories', id))
+  }
+
+  // Expense Actions
+  const addExpense = async (expenseData: Omit<Expense, 'id'>) => {
+    const id = `exp-${Math.floor(1000 + Math.random() * 9000)}`
+    const val = { ...expenseData, id }
+    await setDoc(doc(db, 'expenses', id), val)
+    return val
+  }
+
+  const deleteExpense = async (id: string) => {
+    await deleteDoc(doc(db, 'expenses', id))
+  }
+
   // Computed / Analytics Helpers
   const activeOrdersCount = computed(() => {
     return orders.value.filter(o => o.status !== 'dispatched').length
@@ -246,6 +362,10 @@ export const useLaundryStore = () => {
     services,
     customers,
     orders,
+    stains,
+    employees,
+    expenseCategories,
+    expenses,
     isLoaded,
     addOrder,
     updateOrderStatus,
@@ -256,6 +376,14 @@ export const useLaundryStore = () => {
     addService,
     updateService,
     deleteService,
+    addStain,
+    deleteStain,
+    addEmployee,
+    deleteEmployee,
+    addExpenseCategory,
+    deleteExpenseCategory,
+    addExpense,
+    deleteExpense,
     activeOrdersCount,
     draftOrdersCount,
     readyOrdersCount,

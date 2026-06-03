@@ -38,6 +38,12 @@
               <span>Reports & Collections</span>
             </NuxtLink>
           </li>
+          <li>
+            <NuxtLink to="/expenses" class="nav-link">
+              <i class="ti ti-receipt nav-icon"></i>
+              <span>Expenses & Payouts</span>
+            </NuxtLink>
+          </li>
         </ul>
       </nav>
     </aside>

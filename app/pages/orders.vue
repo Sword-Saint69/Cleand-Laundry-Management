@@ -276,9 +276,9 @@
                           v-model="item.stains" 
                           style="padding: 0.4rem; font-size: 0.85rem; width: 100%; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: var(--radius-sm);"
                         >
-                          <option value="None">None</option>
-                          <option value="Mild">Mild</option>
-                          <option value="Heavy">Heavy</option>
+                          <option v-for="st in dynamicStains" :key="st" :value="st">
+                            {{ st }}
+                          </option>
                         </select>
                       </td>
                       <td style="padding: 0.25rem;">
@@ -560,7 +560,7 @@ import { ref, computed, watch } from 'vue'
 import { useLaundryStore, type OrderStatus, type OrderItem } from '~/composables/useLaundryStore'
 
 const store = useLaundryStore()
-const { orders, customers, services, isLoaded, addOrder, updateOrderStatus, dispatchOrder, deleteOrder } = store
+const { orders, customers, services, stains, isLoaded, addOrder, updateOrderStatus, dispatchOrder, deleteOrder } = store
 
 const searchQuery = ref('')
 const statusFilter = ref('all')
@@ -571,6 +571,17 @@ const selectedReceiptOrder = ref<any | null>(null)
 const dispatchingOrder = ref<any | null>(null)
 const dispatchDiscount = ref(0)
 const dispatchAmountPaid = ref(0)
+
+const dynamicStains = computed(() => {
+  if (stains && stains.value && stains.value.length > 0) {
+    const list = stains.value.map(s => s.name)
+    if (!list.includes('None')) {
+      list.unshift('None')
+    }
+    return list
+  }
+  return ['None', 'Mild', 'Heavy']
+})
 
 const openDispatchPopup = (order: any) => {
   dispatchingOrder.value = order
