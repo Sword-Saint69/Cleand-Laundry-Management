@@ -112,8 +112,13 @@
                 <strong>{{ order.id }}</strong>
                 <span :class="['badge', `badge-${order.status}`]">{{ order.status }}</span>
               </div>
-              <div class="flex justify-between items-center mt-2" style="font-size: 0.85rem;">
-                <span class="text-secondary">{{ order.serviceName }}</span>
+              <div class="flex justify-between items-start mt-2" style="font-size: 0.85rem; gap: 1rem;">
+                <span class="text-secondary">
+                  <strong style="text-transform: capitalize;">{{ order.orderType === 'washing' ? '🧼 Washing' : '💨 Ironing' }}</strong>
+                  <div v-for="item in order.items" :key="item.slNo" style="font-size: 0.8rem; margin-top: 2px;">
+                    • {{ item.material }} (x{{ item.qty }})
+                  </div>
+                </span>
                 <strong>₹{{ order.totalPrice.toFixed(2) }}</strong>
               </div>
               <div v-if="order.notes" style="font-size: 0.8rem; font-style: italic; margin-top: 0.5rem;" class="text-secondary">

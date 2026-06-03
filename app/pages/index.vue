@@ -90,8 +90,8 @@
               <tr>
                 <th>Order ID</th>
                 <th>Customer</th>
-                <th>Service</th>
-                <th>Detail</th>
+                <th>Service Type</th>
+                <th>Items Detail</th>
                 <th>Priority</th>
                 <th>Status</th>
                 <th class="text-right">Actions</th>
@@ -103,10 +103,15 @@
                   <strong class="text-primary">{{ order.id }}</strong>
                 </td>
                 <td>{{ order.customerName }}</td>
-                <td>{{ order.serviceName }}</td>
                 <td>
-                  <span v-if="order.weight">{{ order.weight }} kg</span>
-                  <span v-else>{{ order.qty }} pcs</span>
+                  <span style="text-transform: capitalize; font-weight: 500;">
+                    {{ order.orderType === 'washing' ? '🧼 Washing' : '💨 Ironing' }}
+                  </span>
+                </td>
+                <td>
+                  <div v-for="item in order.items" :key="item.slNo" style="font-size: 0.85rem; line-height: 1.3;">
+                    • {{ item.material }} (x{{ item.qty }})
+                  </div>
                 </td>
                 <td>
                   <span :style="{ color: order.priority === 'express' ? 'var(--color-danger)' : 'var(--text-secondary)', fontWeight: 'bold' }">

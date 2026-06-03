@@ -1,9 +1,18 @@
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { db } from '~/utils/firebase'
+import { 
+  collection, 
+  onSnapshot, 
+  doc, 
+  setDoc, 
+  deleteDoc, 
+  getDoc 
+} from 'firebase/firestore'
 
 export interface Service {
   id: string
   name: string
-  price: number // price per unit
+  price: number
   unit: 'kg' | 'piece'
 }
 
@@ -16,30 +25,30 @@ export interface Customer {
   joinedDate: string
 }
 
+export interface OrderItem {
+  slNo: number
+  material: string
+  qty: number
+  price: number
+  total: number
+}
+
 export type OrderStatus = 'pending' | 'washing' | 'drying' | 'ironing' | 'ready' | 'delivered'
 
 export interface Order {
   id: string
   customerId: string
   customerName: string
-  serviceId: string
-  serviceName: string
-  weight?: number // if unit is kg
-  qty?: number // if unit is piece
+  customerPhone: string
+  items: OrderItem[]
   status: OrderStatus
   priority: 'normal' | 'express'
+  orderType: 'washing' | 'ironing'
   notes: string
   totalPrice: number
   orderDate: string
   dueDate: string
 }
-
-// Initial empty data
-const defaultServices: Service[] = []
-
-const defaultCustomers: Customer[] = []
-
-const defaultOrders: Order[] = []
 
 export const useLaundryStore = () => {
   const services = ref<Service[]>([])
@@ -47,60 +56,72 @@ export const useLaundryStore = () => {
   const orders = ref<Order[]>([])
   const isLoaded = ref(false)
 
-  // Initialize and load from local storage
-  const loadData = () => {
-    if (typeof window !== 'undefined') {
-      const storedServices = localStorage.getItem('laundry_services')
-      const storedCustomers = localStorage.getItem('laundry_customers')
-      const storedOrders = localStorage.getItem('laundry_orders')
-
-      services.value = storedServices ? JSON.parse(storedServices) : defaultServices
-      customers.value = storedCustomers ? JSON.parse(storedCustomers) : defaultCustomers
-      orders.value = storedOrders ? JSON.parse(storedOrders) : defaultOrders
-      isLoaded.value = true
-    }
-  }
-
-  // Watch for state changes and persist to localStorage
-  watch(services, (newVal) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('laundry_services', JSON.stringify(newVal))
-    }
-  }, { deep: true })
-
-  watch(customers, (newVal) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('laundry_customers', JSON.stringify(newVal))
-    }
-  }, { deep: true })
-
-  watch(orders, (newVal) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('laundry_orders', JSON.stringify(newVal))
-    }
-  }, { deep: true })
-
-  // Initialize once
+  // Real-time synchronization listeners
   onMounted(() => {
-    loadData()
+    // Listen to Services
+    onSnapshot(collection(db, 'services'), (snapshot) => {
+      const list: Service[] = []
+      snapshot.forEach(doc => {
+        list.push(doc.data() as Service)
+      })
+      services.value = list
+    })
+
+    // Listen to Customers
+    onSnapshot(collection(db, 'customers'), (snapshot) => {
+      const list: Customer[] = []
+      snapshot.forEach(doc => {
+        list.push(doc.data() as Customer)
+      })
+      customers.value = list
+    })
+
+    // Listen to Orders
+    onSnapshot(collection(db, 'orders'), (snapshot) => {
+      const list: Order[] = []
+      snapshot.forEach(doc => {
+        list.push(doc.data() as Order)
+      })
+      // Sort orders descending by order date
+      orders.value = list.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
+      isLoaded.value = true
+    })
   })
 
   // Order Actions
-  const addOrder = (orderData: Omit<Order, 'id' | 'orderDate' | 'totalPrice'>) => {
+  const addOrder = async (orderData: Omit<Order, 'id' | 'customerId' | 'orderDate' | 'totalPrice'>) => {
     const id = `ORD-${Math.floor(1000 + Math.random() * 9000)}`
     const orderDate = new Date().toISOString()
     
-    // Calculate total price
-    const service = services.value.find(s => s.id === orderData.serviceId)
-    const basePrice = service ? service.price : 0
-    let calcPrice = 0
-    if (service?.unit === 'kg') {
-      calcPrice = basePrice * (orderData.weight || 0)
+    // Auto-create or find customer by phone number
+    let finalCustomerId = ''
+    const existingCust = customers.value.find(c => c.phone === orderData.customerPhone)
+    
+    if (existingCust) {
+      finalCustomerId = existingCust.id
     } else {
-      calcPrice = basePrice * (orderData.qty || 0)
+      // Create new customer automatically
+      const custId = `cust-${Math.floor(100 + Math.random() * 900)}`
+      const joinedDate = new Date().toISOString().split('T')[0]
+      const newCust: Customer = {
+        id: custId,
+        name: orderData.customerName,
+        phone: orderData.customerPhone,
+        email: '',
+        address: '',
+        joinedDate
+      }
+      await setDoc(doc(db, 'customers', custId), newCust)
+      finalCustomerId = custId
     }
 
-    // Add express service fee (+20%)
+    // Calculate total price from all subitems
+    let subtotal = 0
+    if (orderData.items && orderData.items.length > 0) {
+      subtotal = orderData.items.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.price || 0)), 0)
+    }
+
+    let calcPrice = subtotal
     if (orderData.priority === 'express') {
       calcPrice = calcPrice * 1.2
     }
@@ -108,27 +129,29 @@ export const useLaundryStore = () => {
     const finalOrder: Order = {
       ...orderData,
       id,
+      customerId: finalCustomerId,
       orderDate,
       totalPrice: Number(calcPrice.toFixed(2))
     }
 
-    orders.value.unshift(finalOrder)
+    await setDoc(doc(db, 'orders', id), finalOrder)
     return finalOrder
   }
 
-  const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    const index = orders.value.findIndex(o => o.id === orderId)
-    if (index !== -1) {
-      orders.value[index].status = status
+  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    const orderRef = doc(db, 'orders', orderId)
+    const orderSnap = await getDoc(orderRef)
+    if (orderSnap.exists()) {
+      await setDoc(orderRef, { ...orderSnap.data(), status }, { merge: true })
     }
   }
 
-  const deleteOrder = (orderId: string) => {
-    orders.value = orders.value.filter(o => o.id !== orderId)
+  const deleteOrder = async (orderId: string) => {
+    await deleteDoc(doc(db, 'orders', orderId))
   }
 
   // Customer Actions
-  const addCustomer = (customerData: Omit<Customer, 'id' | 'joinedDate'>) => {
+  const addCustomer = async (customerData: Omit<Customer, 'id' | 'joinedDate'>) => {
     const id = `cust-${Math.floor(100 + Math.random() * 900)}`
     const joinedDate = new Date().toISOString().split('T')[0]
     
@@ -138,31 +161,28 @@ export const useLaundryStore = () => {
       joinedDate
     }
 
-    customers.value.push(finalCustomer)
+    await setDoc(doc(db, 'customers', id), finalCustomer)
     return finalCustomer
   }
 
-  const deleteCustomer = (id: string) => {
-    customers.value = customers.value.filter(c => c.id !== id)
+  const deleteCustomer = async (id: string) => {
+    await deleteDoc(doc(db, 'customers', id))
   }
 
   // Service Actions
-  const addService = (serviceData: Omit<Service, 'id'>) => {
+  const addService = async (serviceData: Omit<Service, 'id'>) => {
     const id = `srv-${Math.floor(100 + Math.random() * 900)}`
     const finalService = { ...serviceData, id }
-    services.value.push(finalService)
+    await setDoc(doc(db, 'services', id), finalService)
     return finalService
   }
 
-  const updateService = (updatedService: Service) => {
-    const index = services.value.findIndex(s => s.id === updatedService.id)
-    if (index !== -1) {
-      services.value[index] = updatedService
-    }
+  const updateService = async (updatedService: Service) => {
+    await setDoc(doc(db, 'services', updatedService.id), updatedService)
   }
 
-  const deleteService = (id: string) => {
-    services.value = services.value.filter(s => s.id !== id)
+  const deleteService = async (id: string) => {
+    await deleteDoc(doc(db, 'services', id))
   }
 
   // Computed / Analytics Helpers
