@@ -106,7 +106,7 @@
               v-for="order in selectedCustomerOrders" 
               :key="order.id"
               style="background: var(--bg-hover); border-radius: var(--radius-md); padding: 1rem; border-left: 4px solid var(--color-primary);"
-              :style="{ borderLeftColor: order.status === 'ready' ? 'var(--color-success)' : order.status === 'delivered' ? 'var(--text-muted)' : 'var(--color-primary)' }"
+              :style="{ borderLeftColor: order.status === 'ready' ? 'var(--color-success)' : order.status === 'dispatched' ? 'var(--text-muted)' : 'var(--color-warning)' }"
             >
               <div class="flex justify-between items-center">
                 <strong>{{ order.id }}</strong>

@@ -33,7 +33,7 @@ export interface OrderItem {
   total: number
 }
 
-export type OrderStatus = 'pending' | 'washing' | 'drying' | 'ironing' | 'ready' | 'delivered'
+export type OrderStatus = 'draft' | 'ready' | 'dispatched'
 
 export interface Order {
   id: string
@@ -48,6 +48,10 @@ export interface Order {
   totalPrice: number
   orderDate: string
   dueDate: string
+  discountAmount?: number
+  amountPaid?: number
+  balanceReturned?: number
+  paymentStatus?: 'paid' | 'unpaid'
 }
 
 export const useLaundryStore = () => {
@@ -146,6 +150,23 @@ export const useLaundryStore = () => {
     }
   }
 
+  const dispatchOrder = async (orderId: string, paymentDetails: {
+    discountAmount: number
+    amountPaid: number
+    balanceReturned: number
+    paymentStatus: 'paid' | 'unpaid'
+  }) => {
+    const orderRef = doc(db, 'orders', orderId)
+    const orderSnap = await getDoc(orderRef)
+    if (orderSnap.exists()) {
+      await setDoc(orderRef, {
+        ...orderSnap.data(),
+        status: 'dispatched',
+        ...paymentDetails
+      }, { merge: true })
+    }
+  }
+
   const deleteOrder = async (orderId: string) => {
     await deleteDoc(doc(db, 'orders', orderId))
   }
@@ -187,11 +208,11 @@ export const useLaundryStore = () => {
 
   // Computed / Analytics Helpers
   const activeOrdersCount = computed(() => {
-    return orders.value.filter(o => o.status !== 'delivered').length
+    return orders.value.filter(o => o.status !== 'dispatched').length
   })
 
-  const washingOrdersCount = computed(() => {
-    return orders.value.filter(o => o.status === 'washing').length
+  const draftOrdersCount = computed(() => {
+    return orders.value.filter(o => o.status === 'draft').length
   })
 
   const readyOrdersCount = computed(() => {
@@ -200,7 +221,7 @@ export const useLaundryStore = () => {
 
   const totalRevenue = computed(() => {
     return orders.value
-      .filter(o => o.status === 'delivered')
+      .filter(o => o.status === 'dispatched')
       .reduce((sum, o) => sum + o.totalPrice, 0)
   })
 
@@ -216,6 +237,7 @@ export const useLaundryStore = () => {
     isLoaded,
     addOrder,
     updateOrderStatus,
+    dispatchOrder,
     deleteOrder,
     addCustomer,
     deleteCustomer,
@@ -223,7 +245,7 @@ export const useLaundryStore = () => {
     updateService,
     deleteService,
     activeOrdersCount,
-    washingOrdersCount,
+    draftOrdersCount,
     readyOrdersCount,
     totalRevenue,
     totalSalesThisMonth

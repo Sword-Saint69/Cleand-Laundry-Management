@@ -1,197 +1,206 @@
 <template>
-  <div>
-    <!-- Header -->
-    <div class="page-header">
-      <div>
-        <h1>Admin Control Panel</h1>
-        <p class="subtitle">Configure rate sheets, materials, and system defaults</p>
+  <div style="min-height: 100vh; background-color: var(--bg-primary); padding: 2rem 3rem; color: var(--text-primary);">
+    <div style="max-width: 1200px; margin: 0 auto;">
+      <!-- Back Navigation Header -->
+      <div style="margin-bottom: 2rem;">
+        <NuxtLink to="/" class="btn btn-secondary" style="font-size: 0.9rem; padding: 0.5rem 1rem; border-color: var(--border-color);">
+          ← Back to Shop Dashboard
+        </NuxtLink>
       </div>
-      <div>
-        <button v-if="activeTab === 'materials'" class="btn btn-primary" @click="openAddModal">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Add Material Type
+
+      <!-- Header -->
+      <div class="page-header">
+        <div>
+          <h1>Admin Control Panel</h1>
+          <p class="subtitle">Configure rate sheets, materials, and system defaults</p>
+        </div>
+        <div>
+          <button v-if="activeTab === 'materials'" class="btn btn-primary" @click="openAddModal">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Material Type
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Selection -->
+      <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+        <button 
+          :style="{ 
+            border: 'none', 
+            background: 'none', 
+            fontSize: '1rem', 
+            fontWeight: '600', 
+            padding: '0.5rem 1rem', 
+            cursor: 'pointer',
+            color: activeTab === 'materials' ? 'var(--color-primary)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'materials' ? '2px solid var(--color-primary)' : 'none'
+          }"
+          @click="activeTab = 'materials'"
+        >
+          Material Rate Sheets
+        </button>
+        <button 
+          :style="{ 
+            border: 'none', 
+            background: 'none', 
+            fontSize: '1rem', 
+            fontWeight: '600', 
+            padding: '0.5rem 1rem', 
+            cursor: 'pointer',
+            color: activeTab === 'system' ? 'var(--color-primary)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'system' ? '2px solid var(--color-primary)' : 'none'
+          }"
+          @click="activeTab = 'system'"
+        >
+          System Status & Maintenance
         </button>
       </div>
-    </div>
 
-    <!-- Tab Selection -->
-    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-      <button 
-        :style="{ 
-          border: 'none', 
-          background: 'none', 
-          fontSize: '1rem', 
-          fontWeight: '600', 
-          padding: '0.5rem 1rem', 
-          cursor: 'pointer',
-          color: activeTab === 'materials' ? 'var(--color-primary)' : 'var(--text-secondary)',
-          borderBottom: activeTab === 'materials' ? '2px solid var(--color-primary)' : 'none'
-        }"
-        @click="activeTab = 'materials'"
-      >
-        Material Rate Sheets
-      </button>
-      <button 
-        :style="{ 
-          border: 'none', 
-          background: 'none', 
-          fontSize: '1rem', 
-          fontWeight: '600', 
-          padding: '0.5rem 1rem', 
-          cursor: 'pointer',
-          color: activeTab === 'system' ? 'var(--color-primary)' : 'var(--text-secondary)',
-          borderBottom: activeTab === 'system' ? '2px solid var(--color-primary)' : 'none'
-        }"
-        @click="activeTab = 'system'"
-      >
-        System Status & Maintenance
-      </button>
-    </div>
-
-    <!-- Content: Materials Tab -->
-    <div v-if="activeTab === 'materials'" class="panel-card">
-      <div v-if="!isLoaded" class="text-center text-secondary py-4">
-        Loading materials list...
-      </div>
-      <div v-else-if="services.length === 0" class="text-center text-secondary py-4">
-        No materials defined yet. Click "Add Material Type" to configure rates for the order form dropdown.
-      </div>
-      <div v-else class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Material Name</th>
-              <th>Base Price</th>
-              <th>Charge Unit</th>
-              <th>Status</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="srv in services" :key="srv.id">
-              <td>
-                <strong style="font-size: 1.05rem;">{{ srv.name }}</strong>
-              </td>
-              <td>
-                <strong style="color: var(--color-success); font-size: 1.05rem;">
-                  ₹{{ srv.price.toFixed(2) }}
-                </strong>
-              </td>
-              <td>
-                <span class="badge badge-pending" style="font-weight: 600;">
-                  per {{ srv.unit.toUpperCase() }}
-                </span>
-              </td>
-              <td>
-                <span class="badge badge-ready">Active</span>
-              </td>
-              <td class="text-right">
-                <div class="flex gap-1 justify-end">
-                  <button class="btn btn-secondary btn-sm" @click="openEditModal(srv)">
-                    Edit Rate
-                  </button>
-                  <button class="btn btn-secondary btn-danger btn-sm" @click="confirmDelete(srv)">
-                    Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Content: System Tab -->
-    <div v-else-if="activeTab === 'system'" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-      <!-- Stats Summary Card -->
-      <div class="panel-card">
-        <h2>Database Metrics</h2>
-        <p class="subtitle mb-1">Current system record counts in Firestore</p>
-        
-        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
-          <div class="flex justify-between py-1" style="border-bottom: 1px solid var(--border-color);">
-            <span class="text-secondary">Registered Customers</span>
-            <strong>{{ customers.length }}</strong>
-          </div>
-          <div class="flex justify-between py-1" style="border-bottom: 1px solid var(--border-color);">
-            <span class="text-secondary">Custom Material Types</span>
-            <strong>{{ services.length }}</strong>
-          </div>
-          <div class="flex justify-between py-1" style="border-bottom: 1px solid var(--border-color);">
-            <span class="text-secondary">All-time Billing Invoices</span>
-            <strong>{{ orders.length }}</strong>
-          </div>
+      <!-- Content: Materials Tab -->
+      <div v-if="activeTab === 'materials'" class="panel-card">
+        <div v-if="!isLoaded" class="text-center text-secondary py-4">
+          Loading materials list...
+        </div>
+        <div v-else-if="services.length === 0" class="text-center text-secondary py-4">
+          No materials defined yet. Click "Add Material Type" to configure rates for the order form dropdown.
+        </div>
+        <div v-else class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Material Name</th>
+                <th>Base Price</th>
+                <th>Charge Unit</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="srv in services" :key="srv.id">
+                <td>
+                  <strong style="font-size: 1.05rem;">{{ srv.name }}</strong>
+                </td>
+                <td>
+                  <strong style="color: var(--color-success); font-size: 1.05rem;">
+                    ₹{{ srv.price.toFixed(2) }}
+                  </strong>
+                </td>
+                <td>
+                  <span class="badge badge-pending" style="font-weight: 600;">
+                    per {{ srv.unit.toUpperCase() }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-ready">Active</span>
+                </td>
+                <td class="text-right">
+                  <div class="flex gap-1 justify-end">
+                    <button class="btn btn-secondary btn-sm" @click="openEditModal(srv)">
+                      Edit Rate
+                    </button>
+                    <button class="btn btn-secondary btn-danger btn-sm" @click="confirmDelete(srv)">
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- Maintenance Commands Card -->
-      <div class="panel-card" style="border-color: rgba(239, 68, 68, 0.2);">
-        <h2 style="color: var(--color-danger)">System Actions</h2>
-        <p class="subtitle mb-1">Administrative wipe utilities (Caution: Permanent operations)</p>
-        
-        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
-          <button class="btn btn-secondary btn-danger" @click="wipeDatabase" style="padding: 0.85rem 1rem;">
-            Wipe Shop Records (Orders & Customers)
-          </button>
+      <!-- Content: System Tab -->
+      <div v-else-if="activeTab === 'system'" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- Stats Summary Card -->
+        <div class="panel-card">
+          <h2>Database Metrics</h2>
+          <p class="subtitle mb-1">Current system record counts in Firestore</p>
           
-          <button class="btn btn-secondary" @click="bootstrapServices" style="padding: 0.85rem 1rem;">
-            Populate Demo Materials & Services
-          </button>
+          <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
+            <div class="flex justify-between py-1" style="border-bottom: 1px solid var(--border-color);">
+              <span class="text-secondary">Registered Customers</span>
+              <strong>{{ customers.length }}</strong>
+            </div>
+            <div class="flex justify-between py-1" style="border-bottom: 1px solid var(--border-color);">
+              <span class="text-secondary">Custom Material Types</span>
+              <strong>{{ services.length }}</strong>
+            </div>
+            <div class="flex justify-between py-1" style="border-bottom: 1px solid var(--border-color);">
+              <span class="text-secondary">All-time Billing Invoices</span>
+              <strong>{{ orders.length }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Maintenance Commands Card -->
+        <div class="panel-card" style="border-color: rgba(239, 68, 68, 0.2);">
+          <h2 style="color: var(--color-danger)">System Actions</h2>
+          <p class="subtitle mb-1">Administrative wipe utilities (Caution: Permanent operations)</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
+            <button class="btn btn-secondary btn-danger" @click="wipeDatabase" style="padding: 0.85rem 1rem;">
+              Wipe Shop Records (Orders & Customers)
+            </button>
+            
+            <button class="btn btn-secondary" @click="bootstrapServices" style="padding: 0.85rem 1rem;">
+              Populate Demo Materials & Services
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Add/Edit Service Modal -->
-    <div class="modal-backdrop" v-if="showModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>{{ isEditing ? 'Edit Material Rate' : 'Add New Material Type' }}</h2>
-          <button 
-            @click="showModal = false" 
-            style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;"
-          >
-            &times;
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="srv-name">Material Name</label>
-            <input 
-              id="srv-name" 
-              type="text" 
-              v-model="serviceForm.name" 
-              placeholder="e.g. Silk Saree, Blanket, Jacket" 
-              :disabled="isEditing"
-            />
+      <!-- Add/Edit Service Modal -->
+      <div class="modal-backdrop" v-if="showModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>{{ isEditing ? 'Edit Material Rate' : 'Add New Material Type' }}</h2>
+            <button 
+              @click="showModal = false" 
+              style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;"
+            >
+              &times;
+            </button>
           </div>
-          <div class="form-row">
+          <div class="modal-body">
             <div class="form-group">
-              <label for="srv-price">Rate / Base Price (₹)</label>
+              <label for="srv-name">Material Name</label>
               <input 
-                id="srv-price" 
-                type="number" 
-                step="5" 
-                min="1" 
-                v-model.number="serviceForm.price" 
-                placeholder="100" 
+                id="srv-name" 
+                type="text" 
+                v-model="serviceForm.name" 
+                placeholder="e.g. Silk Saree, Blanket, Jacket" 
+                :disabled="isEditing"
               />
             </div>
-            <div class="form-group">
-              <label for="srv-unit">Charged By</label>
-              <select id="srv-unit" v-model="serviceForm.unit" :disabled="isEditing">
-                <option value="piece">Quantity (per piece)</option>
-                <option value="kg">Weight (per kg)</option>
-              </select>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="srv-price">Rate / Base Price (₹)</label>
+                <input 
+                  id="srv-price" 
+                  type="number" 
+                  step="5" 
+                  min="1" 
+                  v-model.number="serviceForm.price" 
+                  placeholder="100" 
+                />
+              </div>
+              <div class="form-group">
+                <label for="srv-unit">Charged By</label>
+                <select id="srv-unit" v-model="serviceForm.unit" :disabled="isEditing">
+                  <option value="piece">Quantity (per piece)</option>
+                  <option value="kg">Weight (per kg)</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showModal = false">Cancel</button>
-          <button class="btn btn-primary" :disabled="!isValidForm" @click="saveService">
-            {{ isEditing ? 'Save Changes' : 'Create Material' }}
-          </button>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="showModal = false">Cancel</button>
+            <button class="btn btn-primary" :disabled="!isValidForm" @click="saveService">
+              {{ isEditing ? 'Save Changes' : 'Create Material' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -201,6 +210,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useLaundryStore, type Service } from '~/composables/useLaundryStore'
+
+// Disable default layout with sidebar
+definePageMeta({
+  layout: false
+})
 
 const store = useLaundryStore()
 const { services, customers, orders, isLoaded, addService, updateService, deleteService, deleteOrder, deleteCustomer } = store

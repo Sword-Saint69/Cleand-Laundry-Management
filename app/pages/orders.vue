@@ -28,13 +28,10 @@
           />
           <select v-model="statusFilter">
             <option value="all">All Statuses</option>
-            <option value="active">Active Queue (Non-Delivered)</option>
-            <option value="pending">Pending</option>
-            <option value="washing">Washing</option>
-            <option value="drying">Drying</option>
-            <option value="ironing">Ironing</option>
-            <option value="ready">Ready for Pickup</option>
-            <option value="delivered">Delivered</option>
+            <option value="active">Active Queue (Non-Dispatched)</option>
+            <option value="draft">Draft</option>
+            <option value="ready">Ready</option>
+            <option value="dispatched">Dispatched</option>
           </select>
         </div>
         <div style="display: flex; gap: 0.5rem;">
@@ -78,7 +75,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="order in filteredOrders" :key="order.id">
+            <tr v-for="order in filteredOrders" :key="order.id" @click="viewReceipt(order)" style="cursor: pointer;" class="hover-row">
               <td>
                 <strong class="text-primary">{{ order.id }}</strong>
               </td>
@@ -108,21 +105,18 @@
                   {{ order.priority.toUpperCase() }}
                 </span>
               </td>
-              <td>
+              <td @click.stop>
                 <select 
                   :value="order.status" 
                   @change="changeStatus(order.id, $event)" 
                   style="padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: var(--radius-sm);"
                 >
-                  <option value="pending">Pending</option>
-                  <option value="washing">Washing</option>
-                  <option value="drying">Drying</option>
-                  <option value="ironing">Ironing</option>
+                  <option value="draft">Draft</option>
                   <option value="ready">Ready</option>
-                  <option value="delivered">Delivered</option>
+                  <option value="dispatched">Dispatched</option>
                 </select>
               </td>
-              <td class="text-right">
+              <td class="text-right" @click.stop>
                 <button class="btn btn-danger btn-sm" @click="confirmDelete(order.id)">
                   Cancel
                 </button>
@@ -338,6 +332,176 @@
         </div>
       </div>
     </div>
+
+    <!-- Receipt / Invoice Modal -->
+    <div class="modal-backdrop no-print" v-if="selectedReceiptOrder" @click="selectedReceiptOrder = null">
+      <div class="modal-content print-invoice-modal" style="max-width: 500px;" @click.stop>
+        <div class="modal-header no-print">
+          <h2>Order Invoice</h2>
+          <button 
+            @click="selectedReceiptOrder = null" 
+            style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;"
+          >
+            &times;
+          </button>
+        </div>
+        
+        <div class="modal-body" style="font-family: monospace; color: #000; padding: 1.5rem; background: #fff; line-height: 1.4;">
+          <!-- Shop details -->
+          <div class="text-center" style="border-bottom: 2px dashed #ccc; padding-bottom: 1rem; margin-bottom: 1rem;">
+            <h1 style="margin: 0; font-size: 1.8rem; letter-spacing: 2px; color: var(--color-primary);">CLEAND</h1>
+            <p style="font-size: 0.8rem; color: #666; margin: 2px 0 0 0;">Premium Laundry & Pressing Services</p>
+            <p style="font-size: 0.75rem; color: #666; margin: 2px 0 0 0;">Ph: +91 98765 43210</p>
+          </div>
+
+          <!-- Order meta -->
+          <div style="font-size: 0.85rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
+            <div><strong>Invoice No:</strong> {{ selectedReceiptOrder.id }}</div>
+            <div><strong>Date:</strong> {{ formatDate(selectedReceiptOrder.orderDate) }}</div>
+            <div><strong>Due Date:</strong> {{ selectedReceiptOrder.dueDate }}</div>
+            <div><strong>Status:</strong> <span style="text-transform: uppercase; font-weight: bold;">{{ selectedReceiptOrder.status }}</span></div>
+            <div><strong>Priority:</strong> <span style="text-transform: uppercase; font-weight: bold;">{{ selectedReceiptOrder.priority }}</span></div>
+          </div>
+
+          <!-- Customer details -->
+          <div style="border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 0.5rem 0; margin-bottom: 1rem; font-size: 0.85rem;">
+            <div><strong>Customer:</strong> {{ selectedReceiptOrder.customerName }}</div>
+            <div><strong>Phone:</strong> {{ selectedReceiptOrder.customerPhone }}</div>
+            <div><strong>Service:</strong> <span style="text-transform: capitalize;">{{ selectedReceiptOrder.orderType }}</span></div>
+          </div>
+
+          <!-- Items Table -->
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-bottom: 1rem;">
+            <thead>
+              <tr style="border-bottom: 1px dashed #ccc;">
+                <th style="padding: 4px 0; text-align: left; text-transform: none; font-size: 0.8rem; color: #000;">Material</th>
+                <th style="padding: 4px 0; text-align: center; text-transform: none; font-size: 0.8rem; color: #000; width: 60px;">Qty</th>
+                <th style="padding: 4px 0; text-align: right; text-transform: none; font-size: 0.8rem; color: #000; width: 80px;">Rate</th>
+                <th style="padding: 4px 0; text-align: right; text-transform: none; font-size: 0.8rem; color: #000; width: 90px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in selectedReceiptOrder.items" :key="item.slNo" style="border-bottom: 1px dashed #eee;">
+                <td style="padding: 6px 0; font-size: 0.8rem; color: #000;">{{ item.material }}</td>
+                <td style="padding: 6px 0; text-align: center; font-size: 0.8rem; color: #000;">{{ item.qty }}</td>
+                <td style="padding: 6px 0; text-align: right; font-size: 0.8rem; color: #000;">₹{{ Number(item.price).toFixed(2) }}</td>
+                <td style="padding: 6px 0; text-align: right; font-size: 0.8rem; color: #000;">₹{{ (Number(item.qty) * Number(item.price)).toFixed(2) }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Pricing summary -->
+          <div style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; align-items: flex-end; border-top: 1px dashed #ccc; padding-top: 0.5rem;">
+            <div>Subtotal: ₹{{ (selectedReceiptOrder.items.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.price || 0)), 0)).toFixed(2) }}</div>
+            <div v-if="selectedReceiptOrder.priority === 'express'">Express Surcharge (20%): +₹{{ (selectedReceiptOrder.items.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.price || 0)), 0) * 0.2).toFixed(2) }}</div>
+            <div style="font-size: 1.1rem; font-weight: bold; margin-top: 0.25rem; border-top: 2px double #ccc; padding-top: 0.25rem;">
+              Total Amount: ₹{{ Number(selectedReceiptOrder.totalPrice).toFixed(2) }}
+            </div>
+          </div>
+
+          <div v-if="selectedReceiptOrder.notes" style="margin-top: 1rem; padding: 0.5rem; background: #f9f9f9; border-radius: 4px; font-size: 0.75rem; border: 1px solid #eee;">
+            <strong>Instructions:</strong> {{ selectedReceiptOrder.notes }}
+          </div>
+
+          <div class="text-center" style="margin-top: 1.5rem; font-size: 0.75rem; color: #888;">
+            Thank you for choosing Cleand!
+          </div>
+        </div>
+
+        <div class="modal-footer no-print">
+          <button class="btn btn-secondary" @click="selectedReceiptOrder = null">Close</button>
+          <button class="btn btn-primary" @click="printReceipt">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.82l-.024-.03H5.385a2.25 2.25 0 00-2.25 2.25v3.75a2.25 2.25 0 002.25 2.25h13.23a2.25 2.25 0 002.25-2.25v-3.75a2.25 2.25 0 00-2.25-2.25h-1.312l-.024.03m-12.825-4.526A2.25 2.25 0 017.5 12h9a2.25 2.25 0 012.235 2.046M12 16.5v-6M12 7.5h.008v.008H12V7.5z" />
+            </svg>
+            Print Receipt
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dispatch & Pay Modal -->
+    <div class="modal-backdrop" v-if="dispatchingOrder" @click="dispatchingOrder = null">
+      <div class="modal-content" style="max-width: 500px;" @click.stop>
+        <div class="modal-header">
+          <h2>Order Dispatch & Payment</h2>
+          <button 
+            @click="dispatchingOrder = null" 
+            style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;"
+          >
+            &times;
+          </button>
+        </div>
+        
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Customer summary info -->
+          <div style="background: var(--bg-hover); padding: 1rem; border-radius: var(--radius-md); font-size: 0.9rem;">
+            <div><strong>Customer Name:</strong> {{ dispatchingOrder.customerName }}</div>
+            <div><strong>Phone Number:</strong> {{ dispatchingOrder.customerPhone }}</div>
+            <div style="margin-top: 0.5rem; font-weight: 500;">Items to Deliver:</div>
+            <div v-for="item in dispatchingOrder.items" :key="item.slNo" style="margin-left: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+              • {{ item.material }} &times; {{ item.qty }}
+            </div>
+          </div>
+
+          <!-- Invoice Details / Math breakdown -->
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Net amount -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+              <span>Net Amount:</span>
+              <strong>₹{{ dispatchingOrder.totalPrice.toFixed(2) }}</strong>
+            </div>
+
+            <!-- Discount amount (Input) -->
+            <div class="form-group">
+              <label for="dispatch-discount">Discount Amount (₹)</label>
+              <input 
+                id="dispatch-discount"
+                type="number" 
+                v-model.number="dispatchDiscount" 
+                min="0"
+                :max="dispatchingOrder.totalPrice"
+                placeholder="0.00"
+              />
+            </div>
+
+            <!-- Amount payable (Net - Discount) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); padding: 0.75rem 1rem; border-radius: var(--radius-sm);">
+              <strong>Amount Payable:</strong>
+              <strong style="color: var(--color-success); font-size: 1.1rem;">₹{{ dispatchPayable.toFixed(2) }}</strong>
+            </div>
+
+            <!-- Amount paid by customer (Input) -->
+            <div class="form-group">
+              <label for="dispatch-amount-paid">Amount Paid by Customer (₹)</label>
+              <input 
+                id="dispatch-amount-paid"
+                type="number" 
+                v-model.number="dispatchAmountPaid" 
+                min="0"
+                placeholder="Enter amount paid"
+              />
+            </div>
+
+            <!-- Balance to be given back -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.5rem;">
+              <span>Balance to return to Customer:</span>
+              <strong style="color: var(--color-warning);">₹{{ dispatchBalance.toFixed(2) }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="dispatchingOrder = null">Cancel</button>
+          <button class="btn btn-secondary" style="background-color: var(--color-warning); color: #fff;" @click="submitDispatch('unpaid')">
+            Pay Later
+          </button>
+          <button class="btn btn-primary" :disabled="dispatchAmountPaid < dispatchPayable" @click="submitDispatch('paid')">
+            Paid & Dispatch
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -346,13 +510,53 @@ import { ref, computed, watch } from 'vue'
 import { useLaundryStore, type OrderStatus, type OrderItem } from '~/composables/useLaundryStore'
 
 const store = useLaundryStore()
-const { orders, customers, isLoaded, addOrder, updateOrderStatus, deleteOrder } = store
+const { orders, customers, services, isLoaded, addOrder, updateOrderStatus, dispatchOrder, deleteOrder } = store
 
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const filterPriority = ref('all')
 const showCreateModal = ref(false)
 const orderStep = ref(1)
+const selectedReceiptOrder = ref<any | null>(null)
+const dispatchingOrder = ref<any | null>(null)
+const dispatchDiscount = ref(0)
+const dispatchAmountPaid = ref(0)
+
+const openDispatchPopup = (order: any) => {
+  dispatchingOrder.value = order
+  dispatchDiscount.value = 0
+  dispatchAmountPaid.value = Number(order.totalPrice)
+}
+
+const dispatchPayable = computed(() => {
+  if (!dispatchingOrder.value) return 0
+  return Math.max(0, Number(dispatchingOrder.value.totalPrice) - Number(dispatchDiscount.value || 0))
+})
+
+const dispatchBalance = computed(() => {
+  return Math.max(0, Number(dispatchAmountPaid.value || 0) - dispatchPayable.value)
+})
+
+const submitDispatch = async (paymentStatus: 'paid' | 'unpaid') => {
+  if (!dispatchingOrder.value) return
+  
+  await dispatchOrder(dispatchingOrder.value.id, {
+    discountAmount: Number(dispatchDiscount.value || 0),
+    amountPaid: paymentStatus === 'paid' ? Number(dispatchAmountPaid.value || 0) : 0,
+    balanceReturned: paymentStatus === 'paid' ? Number(dispatchBalance.value || 0) : 0,
+    paymentStatus
+  })
+  
+  dispatchingOrder.value = null
+}
+
+const viewReceipt = (order: any) => {
+  selectedReceiptOrder.value = order
+}
+
+const printReceipt = () => {
+  window.print()
+}
 
 const getTomorrowDate = () => {
   const tomorrow = new Date()
@@ -460,7 +664,7 @@ const submitOrder = async () => {
     customerName: newOrder.value.customerName,
     customerPhone: newOrder.value.customerPhone,
     items: newOrder.value.items,
-    status: 'pending',
+    status: 'draft',
     priority: newOrder.value.priority,
     orderType: newOrder.value.orderType,
     notes: newOrder.value.notes,
@@ -484,7 +688,17 @@ const submitOrder = async () => {
 // Inline status update
 const changeStatus = (orderId: string, event: Event) => {
   const target = event.target as HTMLSelectElement
-  updateOrderStatus(orderId, target.value as OrderStatus)
+  const selectedStatus = target.value
+  
+  if (selectedStatus === 'dispatched') {
+    const ord = orders.value.find(o => o.id === orderId)
+    if (ord) {
+      target.value = ord.status
+      openDispatchPopup(ord)
+    }
+  } else {
+    updateOrderStatus(orderId, selectedStatus as OrderStatus)
+  }
 }
 
 // Delete / Cancel order
@@ -505,9 +719,9 @@ const filteredOrders = computed(() => {
 
     // Status filter match
     const statusMatch = 
-      statusFilter.value === 'all' || 
-      (statusFilter.value === 'active' && order.status !== 'delivered') ||
-      order.status === statusFilter.value
+      (statusFilter.value === 'all' || 
+       (statusFilter.value === 'active' && order.status !== 'dispatched') ||
+       order.status === statusFilter.value)
 
     // Priority filter match
     const priorityMatch = 

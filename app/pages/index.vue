@@ -37,8 +37,8 @@
           </svg>
         </div>
         <div class="metric-info">
-          <span class="metric-label">In Washing</span>
-          <span class="metric-value">{{ washingOrdersCount }}</span>
+          <span class="metric-label">Draft Orders</span>
+          <span class="metric-value">{{ draftOrdersCount }}</span>
         </div>
       </div>
 
@@ -136,7 +136,7 @@
                     <button 
                       v-else 
                       class="btn btn-primary btn-sm"
-                      @click="deliverOrder(order.id)"
+                      @click="deliverOrder(order)"
                     >
                       Deliver ✓
                     </button>
@@ -181,10 +181,93 @@
       </div>
     </div>
   </div>
+
+  <!-- Dispatch & Pay Modal -->
+  <div class="modal-backdrop" v-if="dispatchingOrder" @click="dispatchingOrder = null">
+    <div class="modal-content" style="max-width: 500px;" @click.stop>
+      <div class="modal-header">
+        <h2>Order Dispatch & Payment</h2>
+        <button 
+          @click="dispatchingOrder = null" 
+          style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;"
+        >
+          &times;
+        </button>
+      </div>
+      
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+        <!-- Customer summary info -->
+        <div style="background: var(--bg-hover); padding: 1rem; border-radius: var(--radius-md); font-size: 0.9rem;">
+          <div><strong>Customer Name:</strong> {{ dispatchingOrder.customerName }}</div>
+          <div><strong>Phone Number:</strong> {{ dispatchingOrder.customerPhone }}</div>
+          <div style="margin-top: 0.5rem; font-weight: 500;">Items to Deliver:</div>
+          <div v-for="item in dispatchingOrder.items" :key="item.slNo" style="margin-left: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+            • {{ item.material }} &times; {{ item.qty }}
+          </div>
+        </div>
+
+        <!-- Invoice Details / Math breakdown -->
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <!-- Net amount -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+            <span>Net Amount:</span>
+            <strong>₹{{ dispatchingOrder.totalPrice.toFixed(2) }}</strong>
+          </div>
+
+          <!-- Discount amount (Input) -->
+          <div class="form-group">
+            <label for="dispatch-discount">Discount Amount (₹)</label>
+            <input 
+              id="dispatch-discount"
+              type="number" 
+              v-model.number="dispatchDiscount" 
+              min="0"
+              :max="dispatchingOrder.totalPrice"
+              placeholder="0.00"
+            />
+          </div>
+
+          <!-- Amount payable (Net - Discount) -->
+          <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); padding: 0.75rem 1rem; border-radius: var(--radius-sm);">
+            <strong>Amount Payable:</strong>
+            <strong style="color: var(--color-success); font-size: 1.1rem;">₹{{ dispatchPayable.toFixed(2) }}</strong>
+          </div>
+
+          <!-- Amount paid by customer (Input) -->
+          <div class="form-group">
+            <label for="dispatch-amount-paid">Amount Paid by Customer (₹)</label>
+            <input 
+              id="dispatch-amount-paid"
+              type="number" 
+              v-model.number="dispatchAmountPaid" 
+              min="0"
+              placeholder="Enter amount paid"
+            />
+          </div>
+
+          <!-- Balance to be given back -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.5rem;">
+            <span>Balance to return to Customer:</span>
+            <strong style="color: var(--color-warning);">₹{{ dispatchBalance.toFixed(2) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" @click="dispatchingOrder = null">Cancel</button>
+        <button class="btn btn-secondary" style="background-color: var(--color-warning); color: #fff;" @click="submitDispatch('unpaid')">
+          Pay Later
+        </button>
+        <button class="btn btn-primary" :disabled="dispatchAmountPaid < dispatchPayable" @click="submitDispatch('paid')">
+          Paid & Dispatch
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useLaundryStore, type Order, type OrderStatus } from '~/composables/useLaundryStore'
 
 const store = useLaundryStore()
@@ -194,16 +277,49 @@ const {
   services,
   isLoaded,
   activeOrdersCount, 
-  washingOrdersCount, 
+  draftOrdersCount, 
   readyOrdersCount, 
   totalRevenue, 
-  updateOrderStatus 
+  updateOrderStatus,
+  dispatchOrder
 } = store
+
+const dispatchingOrder = ref<any | null>(null)
+const dispatchDiscount = ref(0)
+const dispatchAmountPaid = ref(0)
+
+const openDispatchPopup = (order: any) => {
+  dispatchingOrder.value = order
+  dispatchDiscount.value = 0
+  dispatchAmountPaid.value = Number(order.totalPrice)
+}
+
+const dispatchPayable = computed(() => {
+  if (!dispatchingOrder.value) return 0
+  return Math.max(0, Number(dispatchingOrder.value.totalPrice) - Number(dispatchDiscount.value || 0))
+})
+
+const dispatchBalance = computed(() => {
+  return Math.max(0, Number(dispatchAmountPaid.value || 0) - dispatchPayable.value)
+})
+
+const submitDispatch = async (paymentStatus: 'paid' | 'unpaid') => {
+  if (!dispatchingOrder.value) return
+  
+  await dispatchOrder(dispatchingOrder.value.id, {
+    discountAmount: Number(dispatchDiscount.value || 0),
+    amountPaid: paymentStatus === 'paid' ? Number(dispatchAmountPaid.value || 0) : 0,
+    balanceReturned: paymentStatus === 'paid' ? Number(dispatchBalance.value || 0) : 0,
+    paymentStatus
+  })
+  
+  dispatchingOrder.value = null
+}
 
 // Get active orders list (exclude delivered)
 const activeOrders = computed(() => {
   return orders.value
-    .filter(o => o.status !== 'delivered')
+    .filter(o => o.status !== 'dispatched')
     .sort((a, b) => {
       // Prioritize express orders
       if (a.priority === 'express' && b.priority !== 'express') return -1
@@ -213,31 +329,26 @@ const activeOrders = computed(() => {
 })
 
 // Define sequence of statuses for easy updates
-const statusSequence: OrderStatus[] = ['pending', 'washing', 'drying', 'ironing', 'ready', 'delivered']
+const statusSequence: OrderStatus[] = ['draft', 'ready', 'dispatched']
 
 const advanceStatus = (order: Order) => {
-  const currentIndex = statusSequence.indexOf(order.status)
-  if (currentIndex !== -1 && currentIndex < statusSequence.length - 2) {
-    const nextStatus = statusSequence[currentIndex + 1]
-    updateOrderStatus(order.id, nextStatus)
+  if (order.status === 'draft') {
+    updateOrderStatus(order.id, 'ready')
   }
 }
 
-const deliverOrder = (orderId: string) => {
-  updateOrderStatus(orderId, 'delivered')
+const deliverOrder = (order: Order) => {
+  openDispatchPopup(order)
 }
 
 // Compute statistics breakdown
 const statusColors: Record<string, string> = {
-  pending: 'var(--color-warning)',
-  washing: 'var(--color-primary)',
-  drying: 'var(--color-info)',
-  ironing: '#ec4899',
+  draft: 'var(--color-warning)',
   ready: 'var(--color-success)'
 }
 
 const statusStats = computed(() => {
-  const statuses = ['pending', 'washing', 'drying', 'ironing', 'ready']
+  const statuses = ['draft', 'ready']
   const total = activeOrders.value.length || 1
   return statuses.map(s => {
     const count = activeOrders.value.filter(o => o.status === s).length
