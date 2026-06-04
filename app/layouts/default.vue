@@ -63,9 +63,16 @@
               <span>Expenses & Payouts</span>
             </NuxtLink>
           </li>
+          <li>
+            <NuxtLink to="/blog" class="nav-link" @click="closeSidebar">
+              <i class="ti ti-news nav-icon" aria-hidden="true"></i>
+              <span>Articles & Tips</span>
+            </NuxtLink>
+          </li>
         </ul>
       </nav>
     </aside>
+
 
     <!-- Main Content Body -->
     <main class="main-content">
