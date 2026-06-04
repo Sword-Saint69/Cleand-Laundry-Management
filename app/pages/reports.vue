@@ -301,7 +301,7 @@ import { useLaundryStore } from '~/composables/useLaundryStore'
 
 // SEO optimization config
 useSeoMeta({
-  title: 'Cleand - Laundry Ledger Reports & Revenue Collections Analytics',
+  title: 'Cleand - Laundry Management',
   description: 'View datewise washing and ironing cash inflows, export bookkeeping statements to CSV, and analyze operational expense outflows.',
   ogTitle: 'Cleand - Laundry Financial Ledger Reports',
   ogDescription: 'Track ledger collections, export business statements, and audit salary and overhead expenses.',

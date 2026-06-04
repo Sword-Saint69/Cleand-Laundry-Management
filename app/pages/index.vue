@@ -314,7 +314,7 @@ import { useLaundryStore, type Order, type OrderStatus } from '~/composables/use
 
 // SEO optimization configuration setup
 useSeoMeta({
-  title: 'Cleand - Advanced Laundry Management System Dashboard',
+  title: 'Cleand - Laundry Management',
   description: 'Log and track orders, manage payments, audit live active washing/ironing queue statuses, and monitor collections in real-time.',
   ogTitle: 'Cleand - Advanced Laundry Management Dashboard',
   ogDescription: 'Real-time billing, collections ledger, and automated queue tracking for laundry businesses.',

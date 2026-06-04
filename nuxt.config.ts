@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   app: {
     head: {
-      title: 'Cleand - Laundry Management System',
+      title: 'Cleand - Laundry Management',
       htmlAttrs: {
         lang: 'en'
       },

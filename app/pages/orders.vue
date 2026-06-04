@@ -579,7 +579,7 @@ import { useLaundryStore, type OrderStatus, type OrderItem } from '~/composables
 
 // SEO optimizations
 useSeoMeta({
-  title: 'Cleand - Laundry Orders Registry & Status Tracker',
+  title: 'Cleand - Laundry Management',
   description: 'Manage active queues, dispatch ready batches, process discounts, handle invoice payments, and search laundry database records.',
   ogTitle: 'Cleand - Laundry Orders Registry',
   ogDescription: 'Manage active queues, dispatch ready batches, process discounts, handle invoice payments, and search laundry database records.',
