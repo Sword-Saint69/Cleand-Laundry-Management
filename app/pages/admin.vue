@@ -15,7 +15,7 @@
           <p class="subtitle">Configure rate sheets, stains, employees, and expense categories</p>
         </div>
         <div>
-          <button v-if="activeTab !== 'system'" class="btn btn-primary" @click="openAddModal(activeTab)">
+          <button v-if="activeTab !== 'system' && activeTab !== 'orders'" class="btn btn-primary" @click="openAddModal(activeTab)">
             <i class="ti ti-plus" style="font-size: 1.15rem;"></i>
             <span>{{ getAddButtonLabel() }}</span>
           </button>
@@ -25,7 +25,7 @@
       <!-- Tab Selection -->
       <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; flex-wrap: wrap;">
         <button 
-          v-for="tab in ['materials', 'stains', 'employees', 'expense_categories', 'system']"
+          v-for="tab in ['orders', 'materials', 'stains', 'employees', 'expense_categories', 'system']"
           :key="tab"
           :style="{ 
             border: 'none', 
@@ -43,8 +43,67 @@
         </button>
       </div>
 
+      <!-- Content: Orders Tab (Admin only status override) -->
+      <div v-if="activeTab === 'orders'" class="panel-card">
+        <h2>Order Status Management</h2>
+        <p class="subtitle mb-1">Admin-only: override any order's status including reverting to a previous state</p>
+
+        <div style="margin: 1rem 0;">
+          <input
+            type="text"
+            v-model="orderSearchQuery"
+            placeholder="Search by order ID, customer name or phone..."
+            style="width: 100%; max-width: 420px;"
+          />
+        </div>
+
+        <div v-if="!isLoaded" class="text-center text-secondary py-4">Loading orders...</div>
+        <div v-else-if="filteredAdminOrders.length === 0" class="text-center text-secondary py-4">No orders found.</div>
+        <div v-else class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Type</th>
+                <th>Total</th>
+                <th>Current Status</th>
+                <th>Change Status</th>
+                <th class="text-right">Delete</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in filteredAdminOrders" :key="order.id">
+                <td><strong class="text-primary">{{ order.id }}</strong></td>
+                <td>
+                  <div>{{ order.customerName }}</div>
+                  <div style="font-size:0.8rem; color: var(--text-muted);">{{ order.customerPhone }}</div>
+                </td>
+                <td>{{ order.orderType === 'washing' ? '🧼 Washing' : '💨 Ironing' }}</td>
+                <td><strong style="color: var(--color-success);">₹{{ order.totalPrice.toFixed(2) }}</strong></td>
+                <td>
+                  <span :class="['badge', `badge-${order.status.replace(/\s+/g, '-')}`]">{{ order.status }}</span>
+                </td>
+                <td>
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    @click="openStatusModal(order)"
+                    style="white-space: nowrap;"
+                  >
+                    Change Status
+                  </button>
+                </td>
+                <td class="text-right">
+                  <button class="btn btn-secondary btn-danger btn-sm" @click="confirmDeleteOrder(order)">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Content: Materials Tab -->
-      <div v-if="activeTab === 'materials'" class="panel-card">
+      <div v-else-if="activeTab === 'materials'" class="panel-card">
         <h2>Material Rate Sheets</h2>
         <p class="subtitle mb-1">Set rates for the clothes dropdown in order sheets</p>
         <div v-if="!isLoaded" class="text-center text-secondary py-4">
@@ -317,11 +376,36 @@
         </div>
       </div>
     </div>
+      <!-- Status Change Modal -->
+      <div class="modal-backdrop" v-if="statusPickerOrder" @click="statusPickerOrder = null">
+        <div class="modal-content" style="max-width: 400px;" @click.stop>
+          <div class="modal-header">
+            <h2>Change Order Status</h2>
+            <button @click="statusPickerOrder = null" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
+          </div>
+          <div class="modal-body" style="gap: 0.75rem;">
+            <p class="text-secondary" style="font-size: 0.85rem; margin-bottom: 0.5rem;">
+              Order <strong>{{ statusPickerOrder.id }}</strong> — {{ statusPickerOrder.customerName }}
+            </p>
+            <button
+              v-for="s in allStatuses"
+              :key="s.value"
+              @click="changeOrderStatus(statusPickerOrder.id, s.value); statusPickerOrder = null"
+              :class="['btn', statusPickerOrder.status === s.value ? 'btn-primary' : 'btn-secondary']"
+              style="width: 100%; justify-content: flex-start; gap: 0.75rem;"
+            >
+              <span style="width: 18px; text-align: center;">{{ statusPickerOrder.status === s.value ? '✓' : '' }}</span>
+              {{ s.label }}
+            </button>
+          </div>
+        </div>
+      </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { OrderStatus } from '~/composables/useLaundryStore'
 import { useLaundryStore } from '~/composables/useLaundryStore'
 
 definePageMeta({
@@ -349,10 +433,45 @@ const {
   deleteExpenseCategory,
   deleteOrder,
   deleteCustomer,
-  deleteExpense
+  deleteExpense,
+  updateOrderStatus
 } = store
 
-const activeTab = ref('materials')
+const activeTab = ref('orders')
+const orderSearchQuery = ref('')
+const statusPickerOrder = ref<any | null>(null)
+
+const openStatusModal = (order: any) => {
+  statusPickerOrder.value = order
+}
+
+const allStatuses = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'dispatched for washing', label: 'Dispatched for Washing' },
+  { value: 'washed', label: 'Washed' },
+  { value: 'ready', label: 'Ready' },
+  { value: 'dispatched', label: 'Dispatched' },
+]
+
+const filteredAdminOrders = computed(() => {
+  const q = orderSearchQuery.value.toLowerCase()
+  if (!q) return orders.value
+  return orders.value.filter(o =>
+    o.id.toLowerCase().includes(q) ||
+    o.customerName.toLowerCase().includes(q) ||
+    o.customerPhone.includes(q)
+  )
+})
+
+const changeOrderStatus = async (orderId: string, status: string) => {
+  await updateOrderStatus(orderId, status as OrderStatus)
+}
+
+const confirmDeleteOrder = (order: any) => {
+  if (confirm(`Delete order "${order.id}" for ${order.customerName}? This cannot be undone.`)) {
+    deleteOrder(order.id)
+  }
+}
 const showModal = ref(false)
 const modalType = ref('materials')
 const isEditing = ref(false)
@@ -366,6 +485,7 @@ const expenseCategoryForm = ref({ name: '' })
 
 const getTabLabel = (tab: string) => {
   const map: Record<string, string> = {
+    orders: 'Orders',
     materials: 'Material Rates',
     stains: 'Stain Options',
     employees: 'Employee Roster',

@@ -409,28 +409,32 @@ const activeOrders = computed(() => {
 // Define sequence of statuses for easy updates
 const statusSequence: OrderStatus[] = ['draft', 'ready', 'dispatched']
 
+const nextStatus = (order: Order): OrderStatus | null => {
+  if (order.status === 'draft') return order.orderType === 'washing' ? 'dispatched for washing' : 'ready'
+  if (order.status === 'dispatched for washing') return 'washed'
+  if (order.status === 'washed') return 'ready'
+  return null
+}
+
+const nextStatusLabel: Record<string, string> = {
+  'dispatched for washing': 'Dispatched for Washing',
+  'washed': 'Washed',
+  'ready': 'Ready',
+}
+
 const getNextStepText = (order: Order) => {
-  if (order.status === 'dispatched for washing') return 'Mark Washed'
-  if (order.status === 'washed') return 'Mark Ready'
-  if (order.status === 'draft') return 'Mark Ready'
-  return 'Next Step'
+  const next = nextStatus(order)
+  return next ? `→ ${nextStatusLabel[next] ?? next}` : 'Next Step'
 }
 
 const getNextStepTitle = (order: Order) => {
-  if (order.status === 'dispatched for washing') return 'Set status to Washed'
-  if (order.status === 'washed') return 'Set status to Ready'
-  if (order.status === 'draft') return 'Set status to Ready'
-  return 'Advance status'
+  const next = nextStatus(order)
+  return next ? `Advance to: ${nextStatusLabel[next] ?? next}` : ''
 }
 
 const advanceStatus = (order: Order) => {
-  if (order.status === 'draft') {
-    updateOrderStatus(order.id, 'ready')
-  } else if (order.status === 'dispatched for washing') {
-    updateOrderStatus(order.id, 'washed')
-  } else if (order.status === 'washed') {
-    updateOrderStatus(order.id, 'ready')
-  }
+  const next = nextStatus(order)
+  if (next) updateOrderStatus(order.id, next)
 }
 
 const deliverOrder = (order: Order) => {

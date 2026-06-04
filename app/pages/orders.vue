@@ -117,29 +117,22 @@
                 </span>
               </td>
               <td @click.stop>
-                <!-- If Ironing order -->
-                <select 
-                  v-if="order.orderType === 'ironing'"
-                  :value="order.status" 
-                  @change="changeStatus(order.id, $event)" 
-                  style="padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: var(--radius-sm);"
+                <button
+                  v-if="order.status === 'ready'"
+                  class="btn btn-primary btn-sm"
+                  @click="openDispatchPopup(order)"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="ready">Ready</option>
-                  <option value="dispatched">Dispatched</option>
-                </select>
-                <!-- If Washing order -->
-                <select 
-                  v-else
-                  :value="order.status" 
-                  @change="changeStatus(order.id, $event)" 
-                  style="padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: var(--radius-sm);"
+                  Deliver ✓
+                </button>
+                <button
+                  v-else-if="getNextState(order)"
+                  class="btn btn-secondary btn-sm"
+                  @click="advanceOrderStatus(order)"
+                  style="white-space: nowrap;"
                 >
-                  <option value="dispatched for washing">Dispatched for Washing</option>
-                  <option value="washed">Washed</option>
-                  <option value="ready">Ready</option>
-                  <option value="dispatched">Dispatched</option>
-                </select>
+                  → {{ getNextStateLabel(order) }}
+                </button>
+                <span v-else class="text-secondary" style="font-size: 0.8rem;">Completed</span>
               </td>
               <td class="text-right" @click.stop>
                 <button class="btn btn-danger btn-sm" @click="confirmDelete(order.id)">
@@ -823,20 +816,27 @@ const submitOrder = async () => {
   showCreateModal.value = false
 }
 
-// Inline status update
-const changeStatus = (orderId: string, event: Event) => {
-  const target = event.target as HTMLSelectElement
-  const selectedStatus = target.value
-  
-  if (selectedStatus === 'dispatched') {
-    const ord = orders.value.find(o => o.id === orderId)
-    if (ord) {
-      target.value = ord.status
-      openDispatchPopup(ord)
-    }
-  } else {
-    updateOrderStatus(orderId, selectedStatus as OrderStatus)
-  }
+const getNextState = (order: Order): OrderStatus | null => {
+  if (order.status === 'draft') return order.orderType === 'washing' ? 'dispatched for washing' : 'ready'
+  if (order.status === 'dispatched for washing') return 'washed'
+  if (order.status === 'washed') return 'ready'
+  return null
+}
+
+const nextStateLabelMap: Record<string, string> = {
+  'dispatched for washing': 'Dispatched for Washing',
+  'washed': 'Washed',
+  'ready': 'Ready',
+}
+
+const getNextStateLabel = (order: Order) => {
+  const next = getNextState(order)
+  return next ? (nextStateLabelMap[next] ?? next) : ''
+}
+
+const advanceOrderStatus = (order: Order) => {
+  const next = getNextState(order)
+  if (next) updateOrderStatus(order.id, next)
 }
 
 // Delete / Cancel order
