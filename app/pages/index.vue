@@ -131,20 +131,20 @@
                 </td>
                 <td class="text-right">
                   <div class="flex gap-1 justify-end">
-                    <button 
-                      v-if="order.status !== 'ready'" 
-                      class="btn btn-secondary btn-sm"
-                      @click="advanceStatus(order)"
-                      :title="getNextStepTitle(order)"
-                    >
-                      {{ getNextStepText(order) }} →
-                    </button>
-                    <button 
-                      v-else 
+                    <button
+                      v-if="isDeliverState(order)"
                       class="btn btn-primary btn-sm"
                       @click="deliverOrder(order)"
                     >
                       Deliver ✓
+                    </button>
+                    <button
+                      v-else-if="nextStatus(order)"
+                      class="btn btn-secondary btn-sm"
+                      @click="advanceStatus(order)"
+                      :title="getNextStepTitle(order)"
+                    >
+                      {{ getNextStepText(order) }}
                     </button>
                   </div>
                 </td>
@@ -410,11 +410,15 @@ const activeOrders = computed(() => {
 const statusSequence: OrderStatus[] = ['draft', 'ready', 'dispatched']
 
 const nextStatus = (order: Order): OrderStatus | null => {
-  if (order.status === 'draft') return order.orderType === 'washing' ? 'dispatched for washing' : 'ready'
+  if (order.status === 'draft') return 'ready'
+  if (order.status === 'ready' && order.orderType === 'washing') return 'dispatched for washing'
   if (order.status === 'dispatched for washing') return 'washed'
-  if (order.status === 'washed') return 'ready'
   return null
 }
+
+const isDeliverState = (order: Order) =>
+  (order.status === 'ready' && order.orderType === 'ironing') ||
+  (order.status === 'washed' && order.orderType === 'washing')
 
 const nextStatusLabel: Record<string, string> = {
   'dispatched for washing': 'Dispatched for Washing',
@@ -424,7 +428,7 @@ const nextStatusLabel: Record<string, string> = {
 
 const getNextStepText = (order: Order) => {
   const next = nextStatus(order)
-  return next ? `→ ${nextStatusLabel[next] ?? next}` : 'Next Step'
+  return next ? (nextStatusLabel[next] ?? next) : 'Next Step'
 }
 
 const getNextStepTitle = (order: Order) => {

@@ -209,14 +209,12 @@ export const useLaundryStore = () => {
       calcPrice = calcPrice * 1.2
     }
 
-    const initialStatus: OrderStatus = orderData.orderType === 'washing' ? 'dispatched for washing' : 'draft'
-
     const finalOrder: Order = {
       ...orderData,
       id,
       customerId: finalCustomerId,
       orderDate,
-      status: initialStatus,
+      status: 'draft',
       totalPrice: Number(calcPrice.toFixed(2))
     }
 

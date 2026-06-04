@@ -82,6 +82,7 @@
               <th>Date Ordered</th>
               <th>Priority</th>
               <th>Status</th>
+              <th>Next Step</th>
               <th class="text-right">Actions</th>
             </tr>
           </thead>
@@ -116,9 +117,14 @@
                   {{ order.priority.toUpperCase() }}
                 </span>
               </td>
+              <td>
+                <span :class="['badge', `badge-${order.status.replace(/\s+/g, '-')}`]">
+                  {{ order.status }}
+                </span>
+              </td>
               <td @click.stop>
                 <button
-                  v-if="order.status === 'ready'"
+                  v-if="isDeliverState(order)"
                   class="btn btn-primary btn-sm"
                   @click="openDispatchPopup(order)"
                 >
@@ -130,7 +136,7 @@
                   @click="advanceOrderStatus(order)"
                   style="white-space: nowrap;"
                 >
-                  → {{ getNextStateLabel(order) }}
+                  {{ getNextStateLabel(order) }}
                 </button>
                 <span v-else class="text-secondary" style="font-size: 0.8rem;">Completed</span>
               </td>
@@ -817,11 +823,15 @@ const submitOrder = async () => {
 }
 
 const getNextState = (order: Order): OrderStatus | null => {
-  if (order.status === 'draft') return order.orderType === 'washing' ? 'dispatched for washing' : 'ready'
+  if (order.status === 'draft') return 'ready'
+  if (order.status === 'ready' && order.orderType === 'washing') return 'dispatched for washing'
   if (order.status === 'dispatched for washing') return 'washed'
-  if (order.status === 'washed') return 'ready'
   return null
 }
+
+const isDeliverState = (order: Order) =>
+  order.status === 'ready' && order.orderType === 'ironing' ||
+  order.status === 'washed' && order.orderType === 'washing'
 
 const nextStateLabelMap: Record<string, string> = {
   'dispatched for washing': 'Dispatched for Washing',
