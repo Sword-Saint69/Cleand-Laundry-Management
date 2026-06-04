@@ -12,7 +12,8 @@ import {
 export interface Service {
   id: string
   name: string
-  price: number
+  washingPrice: number
+  ironingPrice: number
   unit: 'kg' | 'piece'
 }
 

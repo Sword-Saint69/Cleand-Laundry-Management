@@ -762,7 +762,7 @@ const updateItemTotal = (item: OrderItem) => {
 const onMaterialChange = (item: OrderItem) => {
   const selectedSrv = services.value.find(s => s.name === item.material)
   if (selectedSrv) {
-    item.price = selectedSrv.price
+    item.price = newOrder.value.orderType === 'washing' ? selectedSrv.washingPrice : selectedSrv.ironingPrice
     updateItemTotal(item)
   }
 }

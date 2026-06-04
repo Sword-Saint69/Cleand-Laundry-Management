@@ -58,7 +58,8 @@
             <thead>
               <tr>
                 <th>Material Name</th>
-                <th>Base Price</th>
+                <th>🧼 Washing Price</th>
+                <th>💨 Ironing Price</th>
                 <th>Charge Unit</th>
                 <th class="text-right">Actions</th>
               </tr>
@@ -66,7 +67,8 @@
             <tbody>
               <tr v-for="srv in services" :key="srv.id">
                 <td><strong>{{ srv.name }}</strong></td>
-                <td><strong style="color: var(--color-success)">₹{{ srv.price.toFixed(2) }}</strong></td>
+                <td><strong style="color: var(--color-primary)">₹{{ (srv.washingPrice ?? 0).toFixed(2) }}</strong></td>
+                <td><strong style="color: var(--color-success)">₹{{ (srv.ironingPrice ?? 0).toFixed(2) }}</strong></td>
                 <td><span class="badge badge-ready">per {{ srv.unit }}</span></td>
                 <td class="text-right">
                   <div class="flex gap-1 justify-end">
@@ -230,17 +232,43 @@
                 <label>Material Name</label>
                 <input type="text" v-model="materialForm.name" placeholder="e.g. Silk Saree, Blanket, Jacket" :disabled="isEditing" />
               </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Price (₹)</label>
-                  <input type="number" v-model.number="materialForm.price" placeholder="150" />
+
+              <!-- Washing category -->
+              <div style="border: 1px solid rgba(2,132,199,0.25); border-radius: var(--radius-md); padding: 1rem; background: rgba(2,132,199,0.04);">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                  🧼 Washing
                 </div>
-                <div class="form-group">
-                  <label>Charged By</label>
-                  <select v-model="materialForm.unit" :disabled="isEditing">
-                    <option value="piece">Quantity (per piece)</option>
-                    <option value="kg">Weight (per kg)</option>
-                  </select>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" v-model.number="materialForm.washingPrice" placeholder="100" min="0" />
+                  </div>
+                  <div class="form-group">
+                    <label>Charged By</label>
+                    <select v-model="materialForm.unit" :disabled="isEditing">
+                      <option value="piece">per piece</option>
+                      <option value="kg">per kg</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ironing category -->
+              <div style="border: 1px solid rgba(13,148,136,0.25); border-radius: var(--radius-md); padding: 1rem; background: rgba(13,148,136,0.04);">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-success); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                  💨 Ironing
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" v-model.number="materialForm.ironingPrice" placeholder="50" min="0" />
+                  </div>
+                  <div class="form-group">
+                    <label>Charged By</label>
+                    <select disabled>
+                      <option>{{ materialForm.unit === 'kg' ? 'per kg' : 'per piece' }}</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -331,7 +359,7 @@ const isEditing = ref(false)
 const editingId = ref<string | null>(null)
 
 // Forms state
-const materialForm = ref({ name: '', price: 50, unit: 'piece' as 'kg' | 'piece' })
+const materialForm = ref({ name: '', washingPrice: 50, ironingPrice: 30, unit: 'piece' as 'kg' | 'piece' })
 const stainForm = ref({ name: '' })
 const employeeForm = ref({ name: '', phone: '', role: 'Counter Staff' })
 const expenseCategoryForm = ref({ name: '' })
@@ -374,7 +402,7 @@ const openAddModal = (type: string) => {
   modalType.value = type
   
   // Reset forms
-  materialForm.value = { name: '', price: 50, unit: 'piece' }
+  materialForm.value = { name: '', washingPrice: 50, ironingPrice: 30, unit: 'piece' }
   stainForm.value = { name: '' }
   employeeForm.value = { name: '', phone: '', role: 'Counter Staff' }
   expenseCategoryForm.value = { name: '' }
@@ -386,13 +414,13 @@ const openEditMaterial = (srv: any) => {
   isEditing.value = true
   editingId.value = srv.id
   modalType.value = 'materials'
-  materialForm.value = { name: srv.name, price: srv.price, unit: srv.unit }
+  materialForm.value = { name: srv.name, washingPrice: srv.washingPrice ?? srv.price ?? 0, ironingPrice: srv.ironingPrice ?? 0, unit: srv.unit }
   showModal.value = true
 }
 
 const isValidForm = computed(() => {
   if (modalType.value === 'materials') {
-    return materialForm.value.name.trim() !== '' && materialForm.value.price > 0
+    return materialForm.value.name.trim() !== '' && materialForm.value.washingPrice >= 0 && materialForm.value.ironingPrice >= 0
   } else if (modalType.value === 'stains') {
     return stainForm.value.name.trim() !== ''
   } else if (modalType.value === 'employees') {
@@ -442,12 +470,12 @@ const bootstrapDatabase = async () => {
   // Material demo seeds
   if (services.value.length === 0) {
     const demoItems = [
-      { name: 'Shirt / T-Shirt', price: 40, unit: 'piece' as 'kg' | 'piece' },
-      { name: 'Jeans / Pants', price: 60, unit: 'piece' as 'kg' | 'piece' },
-      { name: 'Bed Sheet', price: 120, unit: 'piece' as 'kg' | 'piece' },
-      { name: 'Blanket / Duvet', price: 200, unit: 'piece' as 'kg' | 'piece' },
-      { name: 'Suit / Blazer Dryclean', price: 350, unit: 'piece' as 'kg' | 'piece' },
-      { name: 'General Clothes Load', price: 150, unit: 'kg' as 'kg' | 'piece' }
+      { name: 'Shirt / T-Shirt', washingPrice: 40, ironingPrice: 20, unit: 'piece' as 'kg' | 'piece' },
+      { name: 'Jeans / Pants', washingPrice: 60, ironingPrice: 30, unit: 'piece' as 'kg' | 'piece' },
+      { name: 'Bed Sheet', washingPrice: 120, ironingPrice: 60, unit: 'piece' as 'kg' | 'piece' },
+      { name: 'Blanket / Duvet', washingPrice: 200, ironingPrice: 80, unit: 'piece' as 'kg' | 'piece' },
+      { name: 'Suit / Blazer', washingPrice: 350, ironingPrice: 150, unit: 'piece' as 'kg' | 'piece' },
+      { name: 'General Clothes Load', washingPrice: 150, ironingPrice: 100, unit: 'kg' as 'kg' | 'piece' }
     ]
     for (const item of demoItems) await addService(item)
   }
