@@ -1,5 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
-import { db } from '~/utils/firebase'
+import { getDb } from '~/utils/firebase'
 import { 
   collection, 
   onSnapshot, 
@@ -83,6 +83,7 @@ export interface Expense {
 }
 
 export const useLaundryStore = () => {
+  const db = getDb()
   const services = ref<Service[]>([])
   const customers = ref<Customer[]>([])
   const orders = ref<Order[]>([])
