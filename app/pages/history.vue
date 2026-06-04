@@ -138,7 +138,7 @@
         <div class="modal-body" style="font-family: monospace; color: #000; padding: 1.5rem; background: #fff; line-height: 1.4;">
           <!-- Shop details -->
           <div class="text-center" style="border-bottom: 2px dashed #ccc; padding-bottom: 1rem; margin-bottom: 1rem;">
-            <h1 style="margin: 0; font-size: 1.8rem; letter-spacing: 2px; color: var(--color-primary);">CLEAND</h1>
+            <img src="/logo.png" alt="Cleand" style="height: 72px; width: auto; object-fit: contain; margin-bottom: 4px;" />
             <p style="font-size: 0.8rem; color: #666; margin: 2px 0 0 0;">Premium Laundry & Pressing Services</p>
             <p style="font-size: 0.75rem; color: #666; margin: 2px 0 0 0;">Ph: +91 98765 43210</p>
           </div>
@@ -234,7 +234,111 @@ const viewReceipt = (order: any) => {
 }
 
 const printReceipt = () => {
-  window.print()
+  const order = selectedReceiptOrder.value
+  if (!order) return
+
+  const subtotal = order.items.reduce((sum: number, item: any) => sum + (Number(item.qty || 0) * Number(item.price || 0)), 0)
+  const expressCharge = order.priority === 'express' ? subtotal * 0.2 : 0
+
+  const itemRows = order.items.map((item: any) => `
+    <tr>
+      <td style="padding:6px 4px;border-bottom:1px dashed #eee;">
+        ${item.material}
+        ${order.orderType === 'washing' && item.stains && item.stains !== 'None'
+          ? `<br><small style="color:red;">[Stains: ${item.stains}]</small>`
+          : ''}
+      </td>
+      <td style="padding:6px 4px;text-align:center;border-bottom:1px dashed #eee;">${item.qty}</td>
+      <td style="padding:6px 4px;text-align:right;border-bottom:1px dashed #eee;">&#8377;${Number(item.price).toFixed(2)}</td>
+      <td style="padding:6px 4px;text-align:right;border-bottom:1px dashed #eee;">&#8377;${(Number(item.qty) * Number(item.price)).toFixed(2)}</td>
+    </tr>`).join('')
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice ${order.id}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; color: #000; padding: 24px; max-width: 420px; margin: 0 auto; font-size: 13px; line-height: 1.5; }
+    h1 { font-size: 1.6rem; letter-spacing: 3px; color: #0284c7; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 4px; text-align: left; border-bottom: 1px dashed #ccc; font-size: 12px; }
+    .right { text-align: right; }
+    .center { text-align: center; }
+    .divider { border-top: 2px dashed #ccc; margin: 10px 0; }
+    .thin { border-top: 1px dashed #ccc; margin: 8px 0; }
+    .summary-row { display: flex; justify-content: space-between; padding: 2px 0; }
+    .total { font-size: 1rem; font-weight: bold; border-top: 2px double #ccc; padding-top: 4px; margin-top: 4px; }
+    @media print {
+      body { padding: 0; }
+      button { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div style="text-align:center;border-bottom:2px dashed #ccc;padding-bottom:12px;margin-bottom:12px;">
+    <img src="${window.location.origin}/logo.png" alt="Cleand" style="height:72px;width:auto;object-fit:contain;margin-bottom:4px;" />
+    <p style="font-size:11px;color:#666;margin-top:2px;">Premium Laundry &amp; Pressing Services</p>
+    <p style="font-size:11px;color:#666;">Ph: +91 98765 43210</p>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <div class="summary-row"><span><strong>Invoice No:</strong></span><span>${order.id}</span></div>
+    <div class="summary-row"><span><strong>Date:</strong></span><span>${new Date(order.orderDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</span></div>
+    <div class="summary-row"><span><strong>Due Date:</strong></span><span>${order.dueDate || '—'}</span></div>
+    <div class="summary-row"><span><strong>Priority:</strong></span><span>${order.priority.toUpperCase()}</span></div>
+    <div class="summary-row"><span><strong>Status:</strong></span><span>${order.status.toUpperCase()}</span></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div style="margin-bottom:10px;">
+    <div class="summary-row"><span><strong>Customer:</strong></span><span>${order.customerName}</span></div>
+    <div class="summary-row"><span><strong>Phone:</strong></span><span>${order.customerPhone}</span></div>
+    <div class="summary-row"><span><strong>Service:</strong></span><span style="text-transform:capitalize;">${order.orderType}</span></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <table style="margin-bottom:10px;">
+    <thead>
+      <tr>
+        <th>Material</th>
+        <th class="center" style="width:50px;">Qty</th>
+        <th class="right" style="width:70px;">Rate</th>
+        <th class="right" style="width:80px;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>${itemRows}</tbody>
+  </table>
+
+  <div class="thin"></div>
+  <div style="text-align:right;">
+    <div class="summary-row"><span>Subtotal:</span><span>&#8377;${subtotal.toFixed(2)}</span></div>
+    ${expressCharge > 0 ? `<div class="summary-row"><span>Express Surcharge (20%):</span><span>+&#8377;${expressCharge.toFixed(2)}</span></div>` : ''}
+    ${order.discountAmount > 0 ? `<div class="summary-row"><span>Discount:</span><span>-&#8377;${Number(order.discountAmount).toFixed(2)}</span></div>` : ''}
+    <div class="summary-row total"><span>Total:</span><span>&#8377;${Number(order.totalPrice).toFixed(2)}</span></div>
+    ${order.paymentStatus ? `<div class="summary-row" style="margin-top:4px;"><span>Payment:</span><span style="font-weight:bold;color:${order.paymentStatus === 'paid' ? 'green' : 'red'}">${order.paymentStatus.toUpperCase()}</span></div>` : ''}
+    ${order.amountPaid > 0 ? `<div class="summary-row"><span>Amount Paid:</span><span>&#8377;${Number(order.amountPaid).toFixed(2)}</span></div>` : ''}
+    ${order.balanceReturned > 0 ? `<div class="summary-row"><span>Balance Returned:</span><span>&#8377;${Number(order.balanceReturned).toFixed(2)}</span></div>` : ''}
+  </div>
+
+  ${order.notes ? `<div style="margin-top:12px;padding:6px;background:#f9f9f9;border:1px solid #eee;border-radius:4px;font-size:11px;"><strong>Notes:</strong> ${order.notes}</div>` : ''}
+
+  <div style="text-align:center;margin-top:20px;font-size:11px;color:#888;">
+    — Thank you for choosing Cleand! —
+  </div>
+
+  <script>window.onload = function() { setTimeout(function(){ window.print(); }, 300); }<\/script>
+</body>
+</html>`
+
+  const win = window.open('', '_blank', 'width=520,height=750,scrollbars=yes')
+  if (win) {
+    win.document.write(html)
+    win.document.close()
+  }
 }
 
 const resetFilters = () => {
