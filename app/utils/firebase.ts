@@ -1,19 +1,15 @@
-import { initializeApp } from "firebase/app"
-import { getFirestore } from "firebase/firestore"
+import { type Firestore } from "firebase/firestore"
 
-const firebaseConfig = {
-  apiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NUXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NUXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+let _instance: Firestore | null = null
+
+export function _setFirestoreInstance(instance: Firestore) {
+  _instance = instance
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig)
-
-// Export Firestore reference
-export const db = getFirestore(app)
-
+// Proxy so all existing `import { db }` callers work after plugin initializes
+export const db = new Proxy({} as Firestore, {
+  get(_, prop) {
+    if (!_instance) throw new Error("Firestore accessed before Firebase plugin initialized")
+    return (_instance as any)[prop]
+  },
+})
