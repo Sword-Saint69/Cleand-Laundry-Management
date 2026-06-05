@@ -151,10 +151,10 @@
           </div>
 
           <!-- Employee Payout Picker (conditional or optional) -->
-          <div class="form-group" v-if="isSalaryCategory">
+          <div class="form-group">
             <label for="exp-employee">Select Employee / Staff Member</label>
             <select id="exp-employee" v-model="form.employeeId" @change="onEmployeeChange">
-              <option value="" disabled>Select staff...</option>
+              <option value="">None / Not Applicable</option>
               <option v-for="emp in employees" :key="emp.id" :value="emp.id">
                 {{ emp.name }} ({{ emp.role }})
               </option>
@@ -228,16 +228,15 @@ const isSalaryCategory = computed(() => {
 })
 
 const onCategoryChange = () => {
-  if (!isSalaryCategory.value) {
-    form.value.employeeId = ''
-    form.value.employeeName = ''
-  }
+  // Preserve employee selection across category changes
 }
 
 const onEmployeeChange = () => {
   const match = employees.value.find(e => e.id === form.value.employeeId)
   if (match) {
     form.value.employeeName = match.name
+  } else {
+    form.value.employeeName = ''
   }
 }
 
