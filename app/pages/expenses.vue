@@ -27,6 +27,17 @@
             <label style="font-weight: 500;">To:</label>
             <input type="date" v-model="endDate" style="padding: 0.5rem;" />
           </div>
+
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: 0.5rem;">
+            <label style="font-weight: 500;">Staff / Recipient:</label>
+            <select v-model="selectedEmployeeFilter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-secondary); color: var(--text-primary); cursor: pointer;">
+              <option value="all">All Recipients</option>
+              <option value="none">None / Not Applicable</option>
+              <option v-for="emp in employees" :key="emp.id" :value="emp.id">
+                {{ emp.name }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <div style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">
@@ -210,6 +221,7 @@ const getPastDateString = (daysAgo: number) => {
 // Search and range boundaries states
 const startDate = ref(getPastDateString(30))
 const endDate = ref(getTodayDateString())
+const selectedEmployeeFilter = ref('all')
 const showAddModal = ref(false)
 
 // Form state
@@ -284,7 +296,16 @@ const confirmDeleteExpense = (id: string) => {
 // Filtering computed logic
 const filteredExpenses = computed(() => {
   return expenses.value.filter(exp => {
-    return exp.date >= startDate.value && exp.date <= endDate.value
+    const matchesDate = exp.date >= startDate.value && exp.date <= endDate.value
+    if (!matchesDate) return false
+
+    if (selectedEmployeeFilter.value === 'all') {
+      return true
+    } else if (selectedEmployeeFilter.value === 'none') {
+      return !exp.employeeId && !exp.employeeName
+    } else {
+      return exp.employeeId === selectedEmployeeFilter.value
+    }
   })
 })
 
